@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>James-Simon-Galerie — Interactive Music Architecture</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap');
+
+        :root {
+            --bg: #08090c;
+            --pill-bg: rgba(12, 14, 20, 0.55);
+            --pill-border: rgba(255, 255, 255, 0.10);
+            --accent: #e5c378;
+            --text: rgba(255, 255, 255, 0.88);
+            --muted: rgba(255, 255, 255, 0.42);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            overflow: hidden;
+            background: var(--bg);
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+
+        /* Subtle interior atmosphere shift when inside the closed Foyer mass */
+        #vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background: radial-gradient(circle at center, transparent 65%, rgba(4, 6, 10, 0.65) 100%);
+            transition: background 1.2s ease;
+        }
+        #vignette.inside-void {
+            background: radial-gradient(circle at center, rgba(16, 22, 38, 0.08) 50%, rgba(3, 5, 12, 0.86) 100%);
+        }
+
+        /* Minimalist Start Screen */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(7, 8, 12, 0.92);
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.6s ease;
+            padding: 24px;
+        }
+
+        .start-title {
+            font-weight: 300;
+            font-size: 22px;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .start-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        .start-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-minimal {
+            padding: 11px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-minimal:hover {
+            background: #fff;
+            color: #08090c;
+            border-color: #fff;
+        }
+        .btn-minimal.secondary {
+            color: var(--accent);
+            border-color: rgba(229, 195, 120, 0.35);
+        }
+        .btn-minimal.secondary:hover {
+            background: var(--accent);
+            color: #08090c;
+        }
+
+        /* Ultra-Minimalist HUD */
+        #hud {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        /* Top-Left: Single Floating Pill */
+        .top-pill {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--pill-bg);
+            border: 1px solid var(--pill-border);
+            backdrop-filter: blur(12px);
+            padding: 6px 8px;
+            border-radius: 999px;
+            pointer-events: auto;
+        }
+
+        .pill-btn {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            letter-spacing: 1px;
+            padding: 5px 11px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .pill-btn:hover {
+            color: #fff;
+        }
+        .pill-btn.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+        .pill-divider {
+            width: 1px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Top-Right: Subtle Zone Readout */
+        .zone-pill {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--pill-bg);
+            border: 1px solid var(--pill-border);
+            backdrop-filter: blur(12px);
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .zone-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* Center Reticle & Subtle Gaze Whisper */
+        #reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 50%;
+            transition: all 0.18s ease;
+            pointer-events: none;
+        }
+        #reticle.focused {
+            width: 18px;
+            height: 18px;
+            border-color: var(--accent);
+            background: rgba(229, 195, 120, 0.12);
+        }
+
+        #gaze-caption {
+            position: absolute;
+            bottom: 54px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--text);
+            background: var(--pill-bg);
+            border: 1px solid var(--pill-border);
+            backdrop-filter: blur(10px);
+            padding: 6px 16px;
+            border-radius: 999px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #gaze-caption.visible {
+            opacity: 1;
+        }
+
+        /* Bottom-Center: Minimalist 7-Voice Equalizer + Shortcuts */
+        .bottom-strip {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: var(--pill-bg);
+            border: 1px solid var(--pill-border);
+            backdrop-filter: blur(12px);
+            padding: 7px 16px;
+            border-radius: 999px;
+            pointer-events: auto;
+        }
+
+        .mini-meters {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mini-meter {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            color: var(--muted);
+        }
+        .mini-bar-bg {
+            width: 28px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.10);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .mini-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            transition: width 0.08s linear;
+        }
+
+        .hint-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="jsg_model_data.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div id="vignette"></div>
+
+    <!-- Minimalist Start Screen -->
+    <div id="overlay">
+        <div class="start-title">JAMES-SIMON-GALERIE</div>
+        <div class="start-sub">Interactive Music Architecture · Edited Rhino Geometry (616 Visible Elements)</div>
+        <div class="start-buttons">
+            <button class="btn-minimal" id="btn-start-free">Walk Freely</button>
+            <button class="btn-minimal secondary" id="btn-start-guided">Auto-Walk Route</button>
+        </div>
+    </div>
+
+    <!-- Minimalist HUD -->
+    <div id="hud">
+        <!-- Top-Left Controls Pill -->
+        <div class="top-pill">
+            <button class="pill-btn active" id="btn-mode-auto" onclick="setInteractionMode('AUTONOMOUS')" title="Mode 2: Building Speaks by Gaze & Location [M]">Building Speaks</button>
+            <button class="pill-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Elements to Play & Loop [M]">User Activates</button>
+            <div class="pill-divider"></div>
+            <button class="pill-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Route [R]">Route [R]</button>
+            <button class="pill-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: Shaded [V]</button>
+        </div>
+
+        <!-- Top-Right Zone Readout -->
+        <div class="zone-pill">
+            <span class="zone-dot" id="zone-dot"></span>
+            <span id="zone-name">EXTERIOR STAIRS</span>
+        </div>
+
+        <!-- Center Reticle & Subtle Gaze Whisper -->
+        <div id="reticle"></div>
+        <div id="gaze-caption"></div>
+
+        <!-- Bottom-Center Minimalist Voice Strip -->
+        <div class="bottom-strip">
+            <div class="mini-meters">
+                <div class="mini-meter" title="1. Exterior Stairs Rhythm">
+                    <span>STAIR</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_STAIR" style="background:#f4a261"></div></div>
+                </div>
+                <div class="mini-meter" title="2. Exterior Columns (Gaze + Proximity)">
+                    <span>COL</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_COLUMNS" style="background:#e5c378"></div></div>
+                </div>
+                <div class="mini-meter" title="3. Entrance Glass Facade (Gaze + Proximity)">
+                    <span>GLASS</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-ENTRANCE_GLASS" style="background:#64e8de"></div></div>
+                </div>
+                <div class="mini-meter" title="4. Closed Foyer Void Atmosphere">
+                    <span>VOID</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_VOID" style="background:#b388ff"></div></div>
+                </div>
+                <div class="mini-meter" title="5. Facade Frames Rhythm (Gaze + Proximity)">
+                    <span>FRAME</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_FRAMES" style="background:#ff7e67"></div></div>
+                </div>
+                <div class="mini-meter" title="6. Interior Descending Stair (Gaze + Proximity)">
+                    <span>DOWN</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-INT_STAIR_DOWN" style="background:#69f0ae"></div></div>
+                </div>
+                <div class="mini-meter" title="7. Skylight Glass Roof (Gaze + Proximity)">
+                    <span>ROOF</span>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-SKYLIGHT_ROOF" style="background:#70d6ff"></div></div>
+                </div>
+            </div>
+            <div class="pill-divider"></div>
+            <div class="hint-text">WASD Walk · Mouse Look · [1-6] Waypoints</div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // 1. ARCHITECTURAL VOICE CONFIGURATION
+        // ============================================================================
+        const VOICE_CONFIG = {
+            EXT_STAIR: {
+                label: "Exterior Stairs · Limestone Rhythm",
+                colorHex: 0xd9b282,
+                maxDist: 38.0
+            },
+            EXT_COLUMNS: {
+                label: "Terrace Columns · Cast-Stone Pulse",
+                colorHex: 0xe5c378,
+                maxDist: 52.0
+            },
+            ENTRANCE_GLASS: {
+                label: "Entrance Glass Facade · Harmonic Voice",
+                colorHex: 0x78dce8,
+                maxDist: 42.0
+            },
+            FOYER_VOID: {
+                label: "Closed Foyer Mass · Architectural Void",
+                colorHex: 0xc4b7d7,
+                maxDist: 45.0
+            },
+            FOYER_FRAMES: {
+                label: "Facade Frames · Bronze Mullion Rhythm",
+                colorHex: 0xe08e79,
+                maxDist: 36.0
+            },
+            INT_STAIR_DOWN: {
+                label: "Interior Descending Stair · Cascading Scale",
+                colorHex: 0x7bdff2,
+                maxDist: 36.0
+            },
+            SKYLIGHT_ROOF: {
+                label: "Skylight Glass Roof & Fins · Celestial Shimmer",
+                colorHex: 0x90e0ef,
+                maxDist: 38.0
+            },
+            CONTEXT_MASS: {
+                label: "Architectural Plinth & Mass",
+                colorHex: 0x8d95a5,
+                maxDist: 35.0
+            }
+        };
+
+        const ACTIVE_VOICE_KEYS = [
+            "EXT_STAIR",
+            "EXT_COLUMNS",
+            "ENTRANCE_GLASS",
+            "FOYER_VOID",
+            "FOYER_FRAMES",
+            "INT_STAIR_DOWN",
+            "SKYLIGHT_ROOF"
+        ];
+
+        // ============================================================================
+        // 2. WAYPOINTS & GUIDED ROUTE
+        // ============================================================================
+        const WAYPOINTS = [
+            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: 14.0 }, lookAt: { x: 86.0, y: 6.5,  z: 14.0 } },
+            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: 13.8 }, lookAt: { x: 78.0, y: 9.0,  z: 3.8  } },
+            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: 16.5 }, lookAt: { x: 74.2, y: 8.8,  z: 16.8 } },
+            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: 15.2 }, lookAt: { x: 48.0, y: 8.5,  z: 14.2 } },
+            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: 15.0 }, lookAt: { x: 52.0, y: 8.2,  z: 20.5 } },
+            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: 18.4 }, lookAt: { x: 35.0, y: 3.5,  z: 14.8 } }
+        ];
+
+        const AUTO_ROUTE_KEYFRAMES = [
+            { t: 0,  pos: [105.0, 0.00, 14.0], look: [88.0, 5.5, 14.0] },
+            { t: 7,  pos: [96.5,  2.28, 13.8], look: [82.0, 8.8, 3.8]  },
+            { t: 14, pos: [88.5,  5.30, 14.8], look: [75.0, 9.0, 4.2]  },
+            { t: 20, pos: [82.5,  5.93, 16.5], look: [74.2, 8.8, 16.8] },
+            { t: 27, pos: [74.8,  5.93, 16.8], look: [68.8, 8.5, 16.8] },
+            { t: 33, pos: [64.0,  5.93, 15.4], look: [48.0, 8.2, 13.8] },
+            { t: 40, pos: [54.5,  5.93, 15.2], look: [52.5, 8.2, 20.5] },
+            { t: 46, pos: [45.0,  5.93, 18.3], look: [35.5, 2.8, 14.8] },
+            { t: 52, pos: [36.5,  5.93, 18.3], look: [35.0, 14.1, 14.7] },
+            { t: 58, pos: [29.0,  5.93, 18.3], look: [38.0, 3.0, 14.8] }
+        ];
+
+        // ============================================================================
+        // 3. STATE
+        // ============================================================================
+        let interactionMode = 'AUTONOMOUS'; // 'AUTONOMOUS' (Building Speaks) or 'ACTIVE' (User Activates)
+        let visualStyle = 'ARCHITECTURAL';  // Default to clean Architectural Solid + Wireframe from Rhino!
+        let isRunning = false;
+        let isPointerLocked = false;
+        let autoRouteActive = false;
+        let autoRouteTime = 0;
+
+        let mouseNDC = new THREE.Vector2(0, 0);
+        let currentGazeHit = null;
+        let isInsideClosedMass = false;
+        let isOnExteriorStair = false;
+        let isMoving = false;
+
+        const voiceLevels = {
+            EXT_STAIR: 0, EXT_COLUMNS: 0, ENTRANCE_GLASS: 0,
+            FOYER_VOID: 0, FOYER_FRAMES: 0, INT_STAIR_DOWN: 0, SKYLIGHT_ROOF: 0
+        };
+        const voiceTargetLevels = { ...voiceLevels };
+
+        // ============================================================================
+        // 4. WEB AUDIO SPATIAL SYNTHESIS ENGINE
+        // ============================================================================
+        let audioCtx = null;
+        let masterGain = null;
+        let reverbNode = null;
+        let reverbSendGain = null;
+        const continuousNodes = {};
+
+        const BPM = 110;
+        const STEP_TIME_MS = ((60 / BPM) / 4) * 1000;
+        let currentStep = 0;
+        let sequencerSteps = Array.from({ length: 16 }, () => []);
+
+        function initAudioEngine() {
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return;
+            }
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.80;
+
+            reverbNode = audioCtx.createConvolver();
+            const revLen = audioCtx.sampleRate * 4.2;
+            const impulse = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
+            for (let ch = 0; ch < 2; ch++) {
+                const data = impulse.getChannelData(ch);
+                for (let i = 0; i < revLen; i++) {
+                    const t = i / revLen;
+                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.6);
+                }
+            }
+            reverbNode.buffer = impulse;
+
+            reverbSendGain = audioCtx.createGain();
+            reverbSendGain.gain.value = 0.45;
+            reverbSendGain.connect(reverbNode);
+            reverbNode.connect(masterGain);
+            masterGain.connect(audioCtx.destination);
+
+            setupContinuousVoices();
+            startSequencerLoop();
+        }
+
+        function setupContinuousVoices() {
+            const now = audioCtx.currentTime;
+
+            // Closed Foyer Void Atmosphere
+            const voidGain = audioCtx.createGain();
+            voidGain.gain.value = 0.0001;
+            const voidFilter = audioCtx.createBiquadFilter();
+            voidFilter.type = 'lowpass';
+            voidFilter.frequency.value = 260;
+            [73.42, 110.0, 146.83, 220.0, 261.63].forEach((f, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.value = f;
+                osc.detune.value = (idx - 2) * 4;
+                const g = audioCtx.createGain();
+                g.gain.value = idx < 2 ? 0.22 : 0.08;
+                osc.connect(g);
+                g.connect(voidFilter);
+                osc.start(now);
+            });
+            voidFilter.connect(voidGain);
+            voidGain.connect(masterGain);
+            voidGain.connect(reverbSendGain);
+            continuousNodes.FOYER_VOID = { gain: voidGain, filter: voidFilter };
+
+            // Entrance Glass Facade Continuous Harmonics
+            const glassGain = audioCtx.createGain();
+            glassGain.gain.value = 0.0001;
+            const glassFilter = audioCtx.createBiquadFilter();
+            glassFilter.type = 'bandpass';
+            glassFilter.frequency.value = 1250;
+            glassFilter.Q.value = 1.4;
+            [587.33, 659.25, 880.0, 1046.50, 1318.51].forEach((f, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = f;
+                osc.detune.value = (idx - 2) * 5;
+                const g = audioCtx.createGain();
+                g.gain.value = 0.11;
+                osc.connect(g);
+                g.connect(glassFilter);
+                osc.start(now);
+            });
+            glassFilter.connect(glassGain);
+            glassGain.connect(masterGain);
+            glassGain.connect(reverbSendGain);
+            continuousNodes.ENTRANCE_GLASS = { gain: glassGain, filter: glassFilter };
+
+            // Skylight Glass Roof Overhead Halo
+            const skyGain = audioCtx.createGain();
+            skyGain.gain.value = 0.0001;
+            const skyFilter = audioCtx.createBiquadFilter();
+            skyFilter.type = 'lowpass';
+            skyFilter.frequency.value = 2400;
+            [783.99, 880.0, 1174.66, 1479.98].forEach((f, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = f;
+                osc.detune.value = (idx - 1.5) * 6;
+                const g = audioCtx.createGain();
+                g.gain.value = 0.09;
+                osc.connect(g);
+                g.connect(skyFilter);
+                osc.start(now);
+            });
+            skyFilter.connect(skyGain);
+            skyGain.connect(masterGain);
+            skyGain.connect(reverbSendGain);
+            continuousNodes.SKYLIGHT_ROOF = { gain: skyGain, filter: skyFilter };
+        }
+
+        function updateContinuousAudio(dt) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            for (const key of ACTIVE_VOICE_KEYS) {
+                const target = voiceTargetLevels[key] || 0;
+                const curr = voiceLevels[key] || 0;
+                const speed = target > curr ? 5.5 : 3.2;
+                voiceLevels[key] = curr + (target - curr) * Math.min(1, dt * speed);
+                if (voiceLevels[key] < 0.002 && target === 0) voiceLevels[key] = 0;
+            }
+
+            if (continuousNodes.FOYER_VOID) {
+                const lvl = voiceLevels.FOYER_VOID;
+                continuousNodes.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.65, now, 0.08);
+                continuousNodes.FOYER_VOID.filter.frequency.setTargetAtTime(160 + lvl * 520, now, 0.1);
+                reverbSendGain.gain.setTargetAtTime(0.35 + lvl * 0.55, now, 0.15);
+            }
+            if (continuousNodes.ENTRANCE_GLASS) {
+                const lvl = voiceLevels.ENTRANCE_GLASS;
+                continuousNodes.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.48, now, 0.06);
+                continuousNodes.ENTRANCE_GLASS.filter.frequency.setTargetAtTime(700 + lvl * 2100, now, 0.08);
+            }
+            if (continuousNodes.SKYLIGHT_ROOF) {
+                const lvl = voiceLevels.SKYLIGHT_ROOF;
+                continuousNodes.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.42, now, 0.06);
+                continuousNodes.SKYLIGHT_ROOF.filter.frequency.setTargetAtTime(900 + lvl * 2800, now, 0.08);
+            }
+        }
+
+        function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
+            if (!audioCtx || intensity <= 0.015) return;
+            const now = audioCtx.currentTime;
+
+            if (voiceKey === 'EXT_STAIR') {
+                const stairScale = [146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63, 293.66];
+                const freq = stairScale[Math.floor(stepIndex / 2) % stairScale.length];
+                const osc = audioCtx.createOscillator();
+                const sub = audioCtx.createOscillator();
+                const filter = audioCtx.createBiquadFilter();
+                const env = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.72, now + 0.18);
+                sub.type = 'sine';
+                sub.frequency.setValueAtTime(freq * 0.5, now);
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(320 + intensity * 750, now);
+
+                const peak = Math.min(0.45, intensity * 0.38);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.012);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.24);
+
+                osc.connect(filter); sub.connect(filter); filter.connect(env);
+                env.connect(masterGain); env.connect(reverbSendGain);
+                osc.start(now); sub.start(now);
+                osc.stop(now + 0.25); sub.stop(now + 0.25);
+            }
+            else if (voiceKey === 'EXT_COLUMNS') {
+                const colNotes = [293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+                const freq = colNotes[(stepIndex * 3) % colNotes.length];
+                const osc = audioCtx.createOscillator();
+                const mod = audioCtx.createOscillator();
+                const modGain = audioCtx.createGain();
+                const env = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                mod.type = 'sine';
+                mod.frequency.setValueAtTime(freq * 2.75, now);
+                modGain.gain.setValueAtTime(freq * 0.8 * intensity, now);
+                modGain.gain.exponentialRampToValueAtTime(0.1, now + 0.09);
+
+                const peak = Math.min(0.42, intensity * 0.36);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.006);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.19);
+
+                mod.connect(modGain); modGain.connect(osc.frequency);
+                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
+                osc.start(now); mod.start(now);
+                osc.stop(now + 0.20); mod.stop(now + 0.20);
+            }
+            else if (voiceKey === 'ENTRANCE_GLASS') {
+                const glassNotes = [880.0, 1046.50, 1174.66, 1318.51, 1567.98];
+                const freq = glassNotes[stepIndex % glassNotes.length];
+                const osc = audioCtx.createOscillator();
+                const env = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+
+                const peak = Math.min(0.30, intensity * 0.26);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.025);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
+
+                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
+                osc.start(now); osc.stop(now + 0.56);
+            }
+            else if (voiceKey === 'FOYER_VOID') {
+                const osc = audioCtx.createOscillator();
+                const env = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(73.42, now);
+                const peak = Math.min(0.38, intensity * 0.32);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.08);
+                env.gain.exponentialRampToValueAtTime(0.001, now + 0.90);
+                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
+                osc.start(now); osc.stop(now + 0.92);
+            }
+            else if (voiceKey === 'FOYER_FRAMES') {
+                const frameNotes = [440.0, 523.25, 659.25, 587.33, 783.99, 659.25];
+                const freq = frameNotes[stepIndex % frameNotes.length];
+                const carrier = audioCtx.createOscillator();
+                const modulator = audioCtx.createOscillator();
+                const modGain = audioCtx.createGain();
+                const bandpass = audioCtx.createBiquadFilter();
+                const env = audioCtx.createGain();
+
+                carrier.type = 'triangle';
+                carrier.frequency.setValueAtTime(freq, now);
+                modulator.type = 'sine';
+                modulator.frequency.setValueAtTime(freq * 3.41, now);
+                modGain.gain.setValueAtTime(freq * 1.6 * intensity, now);
+                modGain.gain.exponentialRampToValueAtTime(1.0, now + 0.08);
+                bandpass.type = 'bandpass';
+                bandpass.frequency.setValueAtTime(freq * 1.5, now);
+                bandpass.Q.value = 2.0;
+
+                const peak = Math.min(0.38, intensity * 0.34);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.004);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.16);
+
+                modulator.connect(modGain); modGain.connect(carrier.frequency);
+                carrier.connect(bandpass); bandpass.connect(env);
+                env.connect(masterGain); env.connect(reverbSendGain);
+                carrier.start(now); modulator.start(now);
+                carrier.stop(now + 0.17); modulator.stop(now + 0.17);
+            }
+            else if (voiceKey === 'INT_STAIR_DOWN') {
+                const descendingScale = [880.00, 783.99, 659.25, 587.33, 523.25, 440.00, 392.00, 329.63, 293.66, 261.63, 220.00, 196.00];
+                const freq = descendingScale[stepIndex % descendingScale.length];
+                const osc = audioCtx.createOscillator();
+                const filter = audioCtx.createBiquadFilter();
+                const env = audioCtx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, now);
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(500 + intensity * 1400, now);
+                filter.frequency.exponentialRampToValueAtTime(280, now + 0.22);
+
+                const peak = Math.min(0.40, intensity * 0.35);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.01);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.26);
+
+                osc.connect(filter); filter.connect(env);
+                env.connect(masterGain); env.connect(reverbSendGain);
+                osc.start(now); osc.stop(now + 0.27);
+            }
+            else if (voiceKey === 'SKYLIGHT_ROOF') {
+                const skyArp = [1174.66, 1318.51, 1567.98, 1760.00, 2093.00, 2349.32];
+                const freq = skyArp[stepIndex % skyArp.length];
+                const osc = audioCtx.createOscillator();
+                const env = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+
+                const peak = Math.min(0.32, intensity * 0.28);
+                env.gain.setValueAtTime(0.001, now);
+                env.gain.linearRampToValueAtTime(peak, now + 0.015);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.45);
+
+                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
+                osc.start(now); osc.stop(now + 0.46);
+            }
+        }
+
+        function startSequencerLoop() {
+            setInterval(() => {
+                if (!isRunning) return;
+
+                if (interactionMode === 'AUTONOMOUS') {
+                    if (voiceLevels.EXT_STAIR > 0.04) {
+                        if ((currentStep % 2 === 0) || (voiceLevels.EXT_STAIR > 0.65 && currentStep % 4 === 3)) {
+                            triggerVoiceStep('EXT_STAIR', currentStep, voiceLevels.EXT_STAIR);
+                        }
+                    }
+                    if (voiceLevels.EXT_COLUMNS > 0.03) {
+                        const colPattern = [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0];
+                        if (colPattern[currentStep] || (voiceLevels.EXT_COLUMNS > 0.6 && currentStep % 2 === 0)) {
+                            triggerVoiceStep('EXT_COLUMNS', currentStep, voiceLevels.EXT_COLUMNS);
+                        }
+                    }
+                    if (voiceLevels.ENTRANCE_GLASS > 0.04) {
+                        if (currentStep % 4 === 0 || (voiceLevels.ENTRANCE_GLASS > 0.55 && currentStep % 2 === 1)) {
+                            triggerVoiceStep('ENTRANCE_GLASS', currentStep, voiceLevels.ENTRANCE_GLASS);
+                        }
+                    }
+                    if (voiceLevels.FOYER_VOID > 0.10 && (currentStep === 0 || currentStep === 8)) {
+                        triggerVoiceStep('FOYER_VOID', currentStep, voiceLevels.FOYER_VOID);
+                    }
+                    if (voiceLevels.FOYER_FRAMES > 0.03) {
+                        const framePattern = [0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1];
+                        if (framePattern[currentStep] || voiceLevels.FOYER_FRAMES > 0.65) {
+                            triggerVoiceStep('FOYER_FRAMES', currentStep, voiceLevels.FOYER_FRAMES);
+                        }
+                    }
+                    if (voiceLevels.INT_STAIR_DOWN > 0.03) {
+                        if (currentStep % 2 === 0 || voiceLevels.INT_STAIR_DOWN > 0.35) {
+                            triggerVoiceStep('INT_STAIR_DOWN', currentStep, voiceLevels.INT_STAIR_DOWN);
+                        }
+                    }
+                    if (voiceLevels.SKYLIGHT_ROOF > 0.03) {
+                        if (currentStep % 2 === 1 || voiceLevels.SKYLIGHT_ROOF > 0.5) {
+                            triggerVoiceStep('SKYLIGHT_ROOF', currentStep, voiceLevels.SKYLIGHT_ROOF);
+                        }
+                    }
+                } else {
+                    const events = sequencerSteps[currentStep];
+                    if (events && events.length > 0) {
+                        events.forEach(ev => {
+                            triggerVoiceStep(ev.voice, currentStep, 0.85);
+                            spawnRipple(ev.point, VOICE_CONFIG[ev.voice]?.colorHex || 0xe5c378);
+                        });
+                    }
+                }
+
+                currentStep = (currentStep + 1) % 16;
+            }, STEP_TIME_MS);
+        }
+
+        // ============================================================================
+        // 5. THREE.JS SCENE — EXACT EDITED RHINO MESHES & BREP EDGES
+        // ============================================================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x08090c);
+        scene.fog = new THREE.FogExp2(0x08090c, 0.0075);
+
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 260);
+        camera.rotation.order = 'YXZ';
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Clean Architectural Lighting
+        const ambientLight = new THREE.AmbientLight(0xe4ecff, 0.65);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xfff4e0, 0.95);
+        sunLight.position.set(130, 75, 45);
+        scene.add(sunLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.35);
+        fillLight.position.set(-60, 40, -30);
+        scene.add(fillLight);
+
+        const foyerWarmLight = new THREE.PointLight(0xe5c378, 0.9, 45);
+        foyerWarmLight.position.set(58, 10.5, 14.5);
+        scene.add(foyerWarmLight);
+
+        const raycastMeshes = [];
+        const solidColliderBoxes = [];
+        const voiceMeshesMap = {};
+        const allShadedMeshes = [];
+        const allWireLines = [];
+        let lidarPointsSystem = null;
+
+        const MAX_RIPPLES = 10;
+        const rippleCenters = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector3(0, -999, 0));
+        const rippleRadii = new Float32Array(MAX_RIPPLES).fill(-1.0);
+        const rippleColors = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector3(1, 0.8, 0.4));
+        let activeRipples = [];
+
+        function spawnRipple(pointVec3, hexColor) {
+            const col = new THREE.Color(hexColor);
+            activeRipples.push({
+                center: pointVec3.clone(),
+                radius: 0.1,
+                color: new THREE.Vector3(col.r, col.g, col.b)
+            });
+            if (activeRipples.length > MAX_RIPPLES) activeRipples.shift();
+        }
+
+        function buildRhinoScene() {
+            const data = window.JSG_MODEL_DATA;
+            if (!data || !data.objects) return;
+
+            const lidarPositions = [];
+            const lidarColors = [];
+
+            const voiceMaterials = {};
+            Object.keys(VOICE_CONFIG).forEach(vk => {
+                const isGlass = vk === 'ENTRANCE_GLASS' || vk === 'SKYLIGHT_ROOF';
+                voiceMaterials[vk] = new THREE.MeshStandardMaterial({
+                    color: VOICE_CONFIG[vk].colorHex,
+                    roughness: isGlass ? 0.12 : 0.72,
+                    metalness: vk === 'FOYER_FRAMES' ? 0.65 : 0.10,
+                    transparent: isGlass,
+                    opacity: isGlass ? 0.24 : 1.0,
+                    emissive: new THREE.Color(VOICE_CONFIG[vk].colorHex),
+                    emissiveIntensity: 0.02,
+                    side: THREE.DoubleSide,
+                    depthWrite: !isGlass
+                });
+                voiceMeshesMap[vk] = [];
+            });
+
+            data.objects.forEach(obj => {
+                // Build exact Three.js BufferGeometry from the Rhino Brep's triangulated render mesh
+                const geom = new THREE.BufferGeometry();
+                geom.setAttribute('position', new THREE.Float32BufferAttribute(obj.v, 3));
+                geom.setIndex(obj.f);
+                geom.computeVertexNormals();
+
+                const baseMat = voiceMaterials[obj.voice] || voiceMaterials.CONTEXT_MASS;
+                const mesh = new THREE.Mesh(geom, baseMat);
+                mesh.userData = {
+                    id: obj.id,
+                    name: obj.name,
+                    layer: obj.layer,
+                    voice: obj.voice,
+                    passThrough: obj.passThrough,
+                    min: { x: obj.min[0], y: obj.min[1], z: obj.min[2] },
+                    max: { x: obj.max[0], y: obj.max[1], z: obj.max[2] }
+                };
+
+                scene.add(mesh);
+                raycastMeshes.push(mesh);
+                allShadedMeshes.push(mesh);
+                if (voiceMeshesMap[obj.voice]) voiceMeshesMap[obj.voice].push(mesh);
+
+                // Build exact Rhino Brep Wireframe Edges
+                if (obj.e && obj.e.length > 0) {
+                    const edgeGeom = new THREE.BufferGeometry();
+                    edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(obj.e, 3));
+                    const edgeMat = new THREE.LineBasicMaterial({
+                        color: 0x1a1e29,
+                        transparent: true,
+                        opacity: 0.35
+                    });
+                    const wire = new THREE.LineSegments(edgeGeom, edgeMat);
+                    scene.add(wire);
+                    allWireLines.push(wire);
+                }
+
+                // Collision boxes (skip pass-through glass & stairs/slabs handled by elevation solver)
+                if (
+                    !obj.passThrough &&
+                    obj.voice !== 'EXT_STAIR' &&
+                    obj.voice !== 'INT_STAIR_DOWN' &&
+                    obj.voice !== 'SKYLIGHT_ROOF' &&
+                    !obj.name.includes("FloorSlab") &&
+                    !obj.name.includes("Roof") &&
+                    !obj.name.includes("Ceiling") &&
+                    !obj.name.includes("Plinth")
+                ) {
+                    solidColliderBoxes.push(mesh.userData);
+                }
+
+                // Sample LiDAR points along the Rhino mesh vertices/faces for Hybrid/LiDAR view
+                const vCol = new THREE.Color(VOICE_CONFIG[obj.voice]?.colorHex || 0x8d95a5);
+                for (let k = 0; k < obj.v.length; k += 3) {
+                    lidarPositions.push(obj.v[k], obj.v[k + 1], obj.v[k + 2]);
+                    lidarColors.push(vCol.r, vCol.g, vCol.b);
+                }
+                const sx = obj.max[0] - obj.min[0];
+                const sy = obj.max[1] - obj.min[1];
+                const sz = obj.max[2] - obj.min[2];
+                const area = 2 * (sx * sy + sy * sz + sx * sz);
+                const numPts = Math.min(240, Math.max(8, Math.floor(area * 6.0)));
+                for (let p = 0; p < numPts; p++) {
+                    const face = Math.floor(Math.random() * 6);
+                    let px = obj.min[0] + Math.random() * sx;
+                    let py = obj.min[1] + Math.random() * sy;
+                    let pz = obj.min[2] + Math.random() * sz;
+                    if (face === 0) px = obj.min[0];
+                    else if (face === 1) px = obj.max[0];
+                    else if (face === 2) py = obj.min[1];
+                    else if (face === 3) py = obj.max[1];
+                    else if (face === 4) pz = obj.min[2];
+                    else pz = obj.max[2];
+                    lidarPositions.push(px, py, pz);
+                    lidarColors.push(vCol.r, vCol.g, vCol.b);
+                }
+            });
+
+            const ptGeom = new THREE.BufferGeometry();
+            ptGeom.setAttribute('position', new THREE.Float32BufferAttribute(lidarPositions, 3));
+            ptGeom.setAttribute('color', new THREE.Float32BufferAttribute(lidarColors, 3));
+
+            const ptMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    uTime: { value: 0 },
+                    uGazePoint: { value: new THREE.Vector3(0, -999, 0) },
+                    uGazeColor: { value: new THREE.Vector3(0.9, 0.76, 0.47) },
+                    uGazeActive: { value: 0.0 },
+                    uRippleCenters: { value: rippleCenters },
+                    uRippleRadii: { value: rippleRadii },
+                    uRippleColors: { value: rippleColors }
+                },
+                vertexShader: `
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    varying float vAlpha;
+                    uniform float uTime;
+                    uniform vec3 uGazePoint;
+                    uniform vec3 uGazeColor;
+                    uniform float uGazeActive;
+                    uniform vec3 uRippleCenters[${MAX_RIPPLES}];
+                    uniform float uRippleRadii[${MAX_RIPPLES}];
+                    uniform vec3 uRippleColors[${MAX_RIPPLES}];
+
+                    void main() {
+                        vec3 pos = position;
+                        vec3 finalColor = color;
+                        float extraSize = 0.0;
+
+                        if (uGazeActive > 0.01) {
+                            float dGaze = distance(pos, uGazePoint);
+                            if (dGaze < 6.0) {
+                                float gFactor = pow(1.0 - dGaze / 6.0, 2.0) * uGazeActive;
+                                finalColor = mix(finalColor, uGazeColor * 1.5, gFactor);
+                                extraSize += gFactor * 3.0;
+                            }
+                        }
+
+                        for (int i = 0; i < ${MAX_RIPPLES}; i++) {
+                            float r = uRippleRadii[i];
+                            if (r > 0.0) {
+                                float dist = distance(pos, uRippleCenters[i]);
+                                float band = abs(dist - r);
+                                if (band < 1.6) {
+                                    float wave = (1.0 - band / 1.6) * max(0.0, 1.0 - r / 30.0);
+                                    finalColor = mix(finalColor, uRippleColors[i] * 1.8, wave);
+                                    extraSize += wave * 4.0;
+                                }
+                            }
+                        }
+
+                        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                        gl_Position = projectionMatrix * mvPosition;
+                        gl_PointSize = clamp((16.0 + extraSize * 4.5) / -mvPosition.z, 1.2, 8.0);
+                        vColor = finalColor;
+                        vAlpha = clamp(1.0 - (-mvPosition.z / 160.0), 0.15, 0.9);
+                    }
+                `,
+                fragmentShader: `
+                    varying vec3 vColor;
+                    varying float vAlpha;
+                    void main() {
+                        float d = length(gl_PointCoord - vec2(0.5));
+                        if (d > 0.5) discard;
+                        gl_FragColor = vec4(vColor, vAlpha * smoothstep(0.5, 0.1, d));
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+
+            lidarPointsSystem = new THREE.Points(ptGeom, ptMat);
+            lidarPointsSystem.visible = false; // Default to clean Architectural Solid view
+            scene.add(lidarPointsSystem);
+        }
+
+        buildRhinoScene();
+
+        // ============================================================================
+        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION & PASS-THROUGH GLASS
+        // ============================================================================
+        const PLAYER_EYE_HEIGHT = 1.72;
+        let playerFootPos = new THREE.Vector3(104.8, 0.0, 14.0);
+        let cameraYaw = Math.PI * 0.5;
+        let cameraPitch = 0.06;
+        const moveKeys = { w: false, a: false, s: false, d: false };
+
+        function lookCameraAt(targetX, targetY, targetZ) {
+            camera.position.set(playerFootPos.x, playerFootPos.y + PLAYER_EYE_HEIGHT, playerFootPos.z);
+            camera.lookAt(targetX, targetY, targetZ);
+            cameraYaw = camera.rotation.y;
+            cameraPitch = camera.rotation.x;
+        }
+
+        lookCameraAt(WAYPOINTS[0].lookAt.x, WAYPOINTS[0].lookAt.y, WAYPOINTS[0].lookAt.z);
+
+        function getArchitecturalFloorElevation(rx, rz, currentElev) {
+            if (rx >= 86.67 && rx <= 103.20 && rz >= 7.35 && rz <= 20.55) {
+                const t = (103.111 - rx) / (103.111 - 86.667);
+                return Math.max(0, Math.min(1, t)) * 5.926;
+            }
+            if (rx >= 26.07 && rx <= 46.37 && rz >= 13.18 && rz < 16.76) {
+                const t = (46.370 - rx) / (46.370 - 26.074);
+                return Math.max(0, Math.min(1, t)) * 5.926;
+            }
+            if (rx >= 0.0 && rx < 86.67 && rz >= 0.0 && rz <= 22.0) {
+                if (currentElev < 1.5 && rx > 44.0 && rx < 52.0 && rz >= 13.0 && rz <= 16.8) {
+                    return 0.0;
+                }
+                return 5.926;
+            }
+            if (rx >= 86.67 && rx <= 103.26 && rz >= 0.0 && rz < 7.35 && currentElev > 3.5) {
+                return 5.926;
+            }
+            return 0.0;
+        }
+
+        function checkHorizontalCollision(nextX, nextZ, footY) {
+            const r = 0.36;
+            const headY = footY + 1.65;
+            const kneeY = footY + 0.45;
+            for (let i = 0; i < solidColliderBoxes.length; i++) {
+                const b = solidColliderBoxes[i];
+                if (b.max.y <= kneeY || b.min.y >= headY) continue;
+                if (nextX + r > b.min.x && nextX - r < b.max.x && nextZ + r > b.min.z && nextZ - r < b.max.z) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // ============================================================================
+        // 7. SPATIAL ZONE & GAZE + PROXIMITY ACOUSTIC ENGINE
+        // ============================================================================
+        const raycaster = new THREE.Raycaster();
+
+        function evaluateSpatialZoneAndGaze() {
+            const rx = playerFootPos.x;
+            const ry = playerFootPos.z;
+            const rz = playerFootPos.y;
+
+            isOnExteriorStair = (rx >= 86.5 && rx <= 103.5 && ry >= 7.3 && ry <= 20.6);
+            isInsideClosedMass = (rx >= 25.4 && rx <= 74.22 && ry >= 7.41 && ry <= 20.89 && rz >= 1.5);
+
+            document.getElementById('vignette').classList.toggle('inside-void', isInsideClosedMass);
+
+            let zoneLabel = "SOUTH PLAZA";
+            if (isOnExteriorStair) zoneLabel = "EXTERIOR STAIRS";
+            else if (rx >= 74.22 && rx < 86.67 && ry >= 7.4 && ry <= 20.9) zoneLabel = "ENTRANCE PORTICO";
+            else if (rx < 86.67 && ry < 7.41) zoneLabel = "COLONNADE TERRACE";
+            else if (isInsideClosedMass && rx >= 46.37) zoneLabel = "CLOSED FOYER VOID";
+            else if (isInsideClosedMass && rx < 46.37) zoneLabel = "INTERIOR STAIR & SKYLIGHT";
+
+            document.getElementById('zone-name').innerText = zoneLabel;
+
+            const aimCoords = (isPointerLocked || autoRouteActive) ? new THREE.Vector2(0, 0) : mouseNDC;
+            raycaster.setFromCamera(aimCoords, camera);
+
+            const hits = raycaster.intersectObjects(raycastMeshes, false);
+            currentGazeHit = null;
+
+            if (hits.length > 0) {
+                let chosenHit = hits[0];
+                for (let i = 0; i < Math.min(hits.length, 4); i++) {
+                    const v = hits[i].object.userData.voice;
+                    if (v && v !== 'CONTEXT_MASS') {
+                        chosenHit = hits[i];
+                        break;
+                    }
+                }
+                currentGazeHit = {
+                    voice: chosenHit.object.userData.voice,
+                    distance: chosenHit.distance,
+                    point: chosenHit.point,
+                    objectData: chosenHit.object.userData
+                };
+            }
+
+            for (const vk of ACTIVE_VOICE_KEYS) {
+                voiceTargetLevels[vk] = 0.0;
+            }
+
+            if (interactionMode === 'AUTONOMOUS') {
+                if (isOnExteriorStair) {
+                    voiceTargetLevels.EXT_STAIR = isMoving ? 0.88 : 0.48;
+                }
+                if (isInsideClosedMass) {
+                    const foyerDepth = rx >= 46.0 ? Math.min(1.0, (74.22 - rx) / 6.0) : 0.65;
+                    voiceTargetLevels.FOYER_VOID = Math.max(0.35, foyerDepth * 0.92);
+                }
+            }
+
+            const reticleEl = document.getElementById('reticle');
+            const captionEl = document.getElementById('gaze-caption');
+
+            if (currentGazeHit && currentGazeHit.voice && currentGazeHit.voice !== 'CONTEXT_MASS') {
+                const gv = currentGazeHit.voice;
+                const dist = currentGazeHit.distance;
+                const cfg = VOICE_CONFIG[gv];
+                const maxD = cfg.maxDist || 40.0;
+
+                if (dist <= maxD) {
+                    const normProximity = Math.max(0.0, Math.min(1.0, 1.0 - (dist - 1.5) / (maxD - 1.5)));
+                    const proximityGain = Math.pow(normProximity, 1.15);
+
+                    if (interactionMode === 'AUTONOMOUS') {
+                        voiceTargetLevels[gv] = Math.max(voiceTargetLevels[gv] || 0, Math.max(0.14, proximityGain));
+                    } else {
+                        voiceTargetLevels[gv] = Math.max(0.15, proximityGain * 0.5);
+                    }
+
+                    reticleEl.classList.add('focused');
+                    captionEl.innerText = `${cfg.label} · ${dist.toFixed(1)}m`;
+                    captionEl.classList.add('visible');
+
+                    if (lidarPointsSystem) {
+                        const col = new THREE.Color(cfg.colorHex);
+                        lidarPointsSystem.material.uniforms.uGazePoint.value.copy(currentGazeHit.point);
+                        lidarPointsSystem.material.uniforms.uGazeColor.value.set(col.r, col.g, col.b);
+                        lidarPointsSystem.material.uniforms.uGazeActive.value = 1.0;
+                    }
+                } else {
+                    reticleEl.classList.remove('focused');
+                    captionEl.classList.remove('visible');
+                    if (lidarPointsSystem) lidarPointsSystem.material.uniforms.uGazeActive.value = 0.0;
+                }
+            } else {
+                reticleEl.classList.remove('focused');
+                captionEl.classList.remove('visible');
+                if (lidarPointsSystem) lidarPointsSystem.material.uniforms.uGazeActive.value = 0.0;
+            }
+
+            for (const vk of ACTIVE_VOICE_KEYS) {
+                const lvl = voiceLevels[vk] || 0;
+                const meshes = voiceMeshesMap[vk];
+                if (meshes && meshes.length > 0 && meshes[0].material) {
+                    meshes[0].material.emissiveIntensity = 0.02 + lvl * 0.35;
+                }
+                const barEl = document.getElementById(`bar-${vk}`);
+                if (barEl) {
+                    barEl.style.width = `${Math.round(lvl * 100)}%`;
+                }
+            }
+        }
+
+        // ============================================================================
+        // 8. MINIMALIST UI CONTROLS
+        // ============================================================================
+        function setInteractionMode(mode) {
+            interactionMode = mode;
+            document.getElementById('btn-mode-auto').classList.toggle('active', mode === 'AUTONOMOUS');
+            document.getElementById('btn-mode-act').classList.toggle('active', mode === 'ACTIVE');
+        }
+
+        function toggleGuidedRoute(forceState) {
+            autoRouteActive = typeof forceState === 'boolean' ? forceState : !autoRouteActive;
+            document.getElementById('btn-route').classList.toggle('active', autoRouteActive);
+        }
+
+        function cycleVisualStyle() {
+            const styles = ['ARCHITECTURAL', 'HYBRID', 'LIDAR'];
+            visualStyle = styles[(styles.indexOf(visualStyle) + 1) % styles.length];
+            const btn = document.getElementById('btn-view');
+
+            if (visualStyle === 'ARCHITECTURAL') {
+                btn.innerText = "View: Shaded [V]";
+                allShadedMeshes.forEach(m => m.visible = true);
+                allWireLines.forEach(l => l.visible = true);
+                if (lidarPointsSystem) lidarPointsSystem.visible = false;
+            } else if (visualStyle === 'HYBRID') {
+                btn.innerText = "View: Hybrid [V]";
+                allShadedMeshes.forEach(m => m.visible = true);
+                allWireLines.forEach(l => l.visible = true);
+                if (lidarPointsSystem) lidarPointsSystem.visible = true;
+            } else {
+                btn.innerText = "View: LiDAR [V]";
+                allShadedMeshes.forEach(m => m.visible = false);
+                allWireLines.forEach(l => l.visible = true);
+                if (lidarPointsSystem) lidarPointsSystem.visible = true;
+            }
+        }
+
+        function teleportToWaypoint(idx) {
+            const wp = WAYPOINTS[idx];
+            if (!wp) return;
+            toggleGuidedRoute(false);
+            playerFootPos.set(wp.pos.x, wp.pos.y, wp.pos.z);
+            lookCameraAt(wp.lookAt.x, wp.lookAt.y, wp.lookAt.z);
+        }
+
+        function startExperience(withAutoRoute) {
+            initAudioEngine();
+            const overlay = document.getElementById('overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('hud').style.opacity = '1';
+                isRunning = true;
+                if (withAutoRoute) {
+                    autoRouteTime = 0;
+                    toggleGuidedRoute(true);
+                } else {
+                    container.requestPointerLock();
+                }
+            }, 500);
+        }
+
+        document.getElementById('btn-start-free').addEventListener('click', () => startExperience(false));
+        document.getElementById('btn-start-guided').addEventListener('click', () => startExperience(true));
+
+        document.addEventListener('pointerlockchange', () => {
+            isPointerLocked = (document.pointerLockElement === container);
+            if (isPointerLocked) mouseNDC.set(0, 0);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isRunning) return;
+            if (isPointerLocked && !autoRouteActive) {
+                cameraYaw -= e.movementX * 0.0022;
+                cameraPitch -= e.movementY * 0.0022;
+                cameraPitch = Math.max(-Math.PI / 2.15, Math.min(Math.PI / 2.15, cameraPitch));
+                camera.rotation.y = cameraYaw;
+                camera.rotation.x = cameraPitch;
+            } else if (!isPointerLocked) {
+                mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            }
+        });
+
+        container.addEventListener('mousedown', (e) => {
+            if (!isRunning || e.button !== 0) return;
+            initAudioEngine();
+            if (!isPointerLocked && !autoRouteActive) {
+                container.requestPointerLock();
+            }
+            if (currentGazeHit && currentGazeHit.voice) {
+                const v = currentGazeHit.voice;
+                const cfg = VOICE_CONFIG[v] || VOICE_CONFIG.CONTEXT_MASS;
+                triggerVoiceStep(v, currentStep, 0.92);
+                spawnRipple(currentGazeHit.point, cfg.colorHex);
+                if (interactionMode === 'ACTIVE') {
+                    sequencerSteps[currentStep].push({
+                        voice: v,
+                        point: currentGazeHit.point.clone()
+                    });
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || e.key === 'ArrowUp') { moveKeys.w = true; if (autoRouteActive) toggleGuidedRoute(false); }
+            if (k === 's' || e.key === 'ArrowDown') { moveKeys.s = true; if (autoRouteActive) toggleGuidedRoute(false); }
+            if (k === 'a' || e.key === 'ArrowLeft') { moveKeys.a = true; if (autoRouteActive) toggleGuidedRoute(false); }
+            if (k === 'd' || e.key === 'ArrowRight') { moveKeys.d = true; if (autoRouteActive) toggleGuidedRoute(false); }
+
+            if (k === 'm') setInteractionMode(interactionMode === 'AUTONOMOUS' ? 'ACTIVE' : 'AUTONOMOUS');
+            if (k === 'r') toggleGuidedRoute();
+            if (k === 'v') cycleVisualStyle();
+            if (k === 'c') sequencerSteps = Array.from({ length: 16 }, () => []);
+            if (['1', '2', '3', '4', '5', '6'].includes(k)) teleportToWaypoint(parseInt(k, 10) - 1);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || e.key === 'ArrowUp') moveKeys.w = false;
+            if (k === 's' || e.key === 'ArrowDown') moveKeys.s = false;
+            if (k === 'a' || e.key === 'ArrowLeft') moveKeys.a = false;
+            if (k === 'd' || e.key === 'ArrowRight') moveKeys.d = false;
+        });
+
+        // ============================================================================
+        // 9. ANIMATION LOOP
+        // ============================================================================
+        const clock = new THREE.Clock();
+
+        function updateAutoRoute(dt) {
+            const totalDuration = AUTO_ROUTE_KEYFRAMES[AUTO_ROUTE_KEYFRAMES.length - 1].t;
+            autoRouteTime = (autoRouteTime + dt) % totalDuration;
+
+            let k0 = AUTO_ROUTE_KEYFRAMES[0];
+            let k1 = AUTO_ROUTE_KEYFRAMES[1];
+            for (let i = 0; i < AUTO_ROUTE_KEYFRAMES.length - 1; i++) {
+                if (autoRouteTime >= AUTO_ROUTE_KEYFRAMES[i].t && autoRouteTime <= AUTO_ROUTE_KEYFRAMES[i + 1].t) {
+                    k0 = AUTO_ROUTE_KEYFRAMES[i];
+                    k1 = AUTO_ROUTE_KEYFRAMES[i + 1];
+                    break;
+                }
+            }
+
+            const span = Math.max(0.001, k1.t - k0.t);
+            const rawAlpha = (autoRouteTime - k0.t) / span;
+            const alpha = rawAlpha * rawAlpha * (3 - 2 * rawAlpha);
+
+            playerFootPos.set(
+                k0.pos[0] + (k1.pos[0] - k0.pos[0]) * alpha,
+                k0.pos[1] + (k1.pos[1] - k0.pos[1]) * alpha,
+                k0.pos[2] + (k1.pos[2] - k0.pos[2]) * alpha
+            );
+            lookCameraAt(
+                k0.look[0] + (k1.look[0] - k0.look[0]) * alpha,
+                k0.look[1] + (k1.look[1] - k0.look[1]) * alpha,
+                k0.look[2] + (k1.look[2] - k0.look[2]) * alpha
+            );
+            isMoving = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1);
+            const elapsed = clock.getElapsedTime();
+
+            if (isRunning) {
+                if (autoRouteActive) {
+                    updateAutoRoute(dt);
+                } else {
+                    const walkSpeed = 6.2;
+                    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
+                    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
+
+                    const moveVec = new THREE.Vector3();
+                    if (moveKeys.w) moveVec.add(forward);
+                    if (moveKeys.s) moveVec.sub(forward);
+                    if (moveKeys.d) moveVec.add(right);
+                    if (moveKeys.a) moveVec.sub(right);
+
+                    isMoving = moveVec.lengthSq() > 0.001;
+                    if (isMoving) {
+                        moveVec.normalize().multiplyScalar(walkSpeed * dt);
+                        const candX = playerFootPos.x + moveVec.x;
+                        const candZ = playerFootPos.z + moveVec.z;
+                        if (!checkHorizontalCollision(candX, playerFootPos.z, playerFootPos.y)) playerFootPos.x = candX;
+                        if (!checkHorizontalCollision(playerFootPos.x, candZ, playerFootPos.y)) playerFootPos.z = candZ;
+                    }
+
+                    const targetElev = getArchitecturalFloorElevation(playerFootPos.x, playerFootPos.z, playerFootPos.y);
+                    playerFootPos.y += (targetElev - playerFootPos.y) * Math.min(1.0, dt * 10.0);
+
+                    const bob = isMoving ? Math.sin(elapsed * 9.5) * 0.04 : 0.0;
+                    camera.position.set(playerFootPos.x, playerFootPos.y + PLAYER_EYE_HEIGHT + bob, playerFootPos.z);
+                }
+
+                evaluateSpatialZoneAndGaze();
+                updateContinuousAudio(dt);
+            }
+
+            if (lidarPointsSystem && lidarPointsSystem.visible) {
+                lidarPointsSystem.material.uniforms.uTime.value = elapsed;
+                for (let i = activeRipples.length - 1; i >= 0; i--) {
+                    activeRipples[i].radius += dt * 16.0;
+                    if (activeRipples[i].radius > 30.0) activeRipples.splice(i, 1);
+                }
+                for (let i = 0; i < MAX_RIPPLES; i++) {
+                    if (i < activeRipples.length) {
+                        rippleCenters[i].copy(activeRipples[i].center);
+                        rippleRadii[i] = activeRipples[i].radius;
+                        rippleColors[i].copy(activeRipples[i].color);
+                    } else {
+                        rippleRadii[i] = -1.0;
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
