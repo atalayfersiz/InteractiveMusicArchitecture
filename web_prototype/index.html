@@ -305,7 +305,7 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="jsg_model_data.js"></script>
+    <script src="jsg_model_data.js?v=4"></script>
 </head>
 <body>
 
@@ -446,38 +446,40 @@
         ];
 
         // ============================================================================
-        // 2. WAYPOINTS & GUIDED ROUTE (RIGHT-HANDED MIRRORED COORDINATES: z = -ry)
-        //    Climbing from X = 105m -> X = 26m facing -X:
-        //    LEFT side  = West Colonnade Terrace (z = -7.4m .. 0.0m)
-        //    RIGHT side = East Foyer Wall & East Gallery Walkway (z = -20.89m .. -14.0m)
+        // 2. MIRRORED COORDINATE SYSTEM (Left <-> Right Mirrored)
+        //    We mirror the entire scene along the building's longitudinal axis (Z = +ry)
+        //    so that climbing from X = 105m -> X = 26m:
+        //      - Everything that was on the Left is now on the RIGHT (Colonnade Terrace at Z = 0..7.4m)
+        //      - Everything that was on the Right is now on the LEFT (Entrance Doors & East Gallery at Z = 13.2..20.5m)
+        //      - Starting Point, Waypoints, Path Curve, and Collision Boxes all use the EXACT same mirrored Z!
         // ============================================================================
         const WAYPOINTS = [
-            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: -14.0 }, lookAt: { x: 86.0, y: 6.5,  z: -14.0 } },
-            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: -13.8 }, lookAt: { x: 78.0, y: 9.0,  z: -3.8  } },
-            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: -16.5 }, lookAt: { x: 74.2, y: 8.8,  z: -16.8 } },
-            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: -15.2 }, lookAt: { x: 48.0, y: 8.5,  z: -14.2 } },
-            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: -15.0 }, lookAt: { x: 52.0, y: 8.2,  z: -20.5 } },
-            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: -18.4 }, lookAt: { x: 35.0, y: 3.5,  z: -14.8 } }
+            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: 15.5 }, lookAt: { x: 86.0, y: 6.5,  z: 16.5 } },
+            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: 15.8 }, lookAt: { x: 78.0, y: 9.0,  z: 3.8  } },
+            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: 16.8 }, lookAt: { x: 74.2, y: 8.8,  z: 16.8 } },
+            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: 15.8 }, lookAt: { x: 48.0, y: 8.5,  z: 14.8 } },
+            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: 15.5 }, lookAt: { x: 52.0, y: 8.2,  z: 20.5 } },
+            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: 18.4 }, lookAt: { x: 35.0, y: 3.5,  z: 14.8 } }
         ];
 
         const AUTO_ROUTE_KEYFRAMES = [
-            { t: 0,  pos: [105.0, 0.00, -14.0], look: [88.0, 5.5, -14.0] },
-            { t: 7,  pos: [96.5,  2.28, -13.8], look: [82.0, 8.8, -3.8]  },
-            { t: 14, pos: [88.5,  5.30, -14.8], look: [75.0, 9.0, -4.2]  },
-            { t: 20, pos: [82.5,  5.93, -16.5], look: [74.2, 8.8, -16.8] },
-            { t: 27, pos: [74.8,  5.93, -16.8], look: [68.8, 8.5, -16.8] },
-            { t: 33, pos: [64.0,  5.93, -15.4], look: [48.0, 8.2, -13.8] },
-            { t: 40, pos: [54.5,  5.93, -15.2], look: [52.5, 8.2, -20.5] },
-            { t: 46, pos: [45.0,  5.93, -18.3], look: [35.5, 2.8, -14.8] },
-            { t: 52, pos: [36.5,  5.93, -18.3], look: [35.0, 14.1, -14.7] },
-            { t: 58, pos: [29.0,  5.93, -18.3], look: [38.0, 3.0, -14.8] }
+            { t: 0,  pos: [105.0, 0.00, 15.5], look: [88.0, 5.5, 16.5] },
+            { t: 7,  pos: [96.5,  2.28, 15.8], look: [82.0, 8.8, 3.8]  },
+            { t: 14, pos: [88.5,  5.30, 16.4], look: [75.0, 9.0, 4.2]  },
+            { t: 20, pos: [82.5,  5.93, 16.8], look: [74.2, 8.8, 16.8] },
+            { t: 27, pos: [74.8,  5.93, 16.8], look: [68.8, 8.5, 16.8] },
+            { t: 33, pos: [64.0,  5.93, 15.6], look: [48.0, 8.2, 14.2] },
+            { t: 40, pos: [54.5,  5.93, 15.4], look: [52.5, 8.2, 20.5] },
+            { t: 46, pos: [45.0,  5.93, 18.3], look: [35.5, 2.8, 14.8] },
+            { t: 52, pos: [36.5,  5.93, 18.3], look: [35.0, 14.1, 14.7] },
+            { t: 58, pos: [29.0,  5.93, 18.3], look: [38.0, 3.0, 14.8] }
         ];
 
         // ============================================================================
         // 3. STATE
         // ============================================================================
         let interactionMode = 'AUTONOMOUS';
-        let visualStyle = 'LIDAR'; // Default directly to the structured 3D LiDAR Point Cloud!
+        let visualStyle = 'LIDAR';
         let isRunning = false;
         let isPointerLocked = false;
         let autoRouteActive = false;
@@ -497,8 +499,7 @@
         const voiceTargetLevels = { ...voiceLevels };
 
         // ============================================================================
-        // 4. PURE WEB AUDIO SYNTHESIS ENGINE (INSPIRED BY YOUR INSTAGRAM VIDEO TIMBRES,
-        //    NO MP4 BACKGROUND AUDIO TRACK!)
+        // 4. PURE WEB AUDIO SYNTHESIS ENGINE (NO BACKGROUND VIDEO TRACK)
         // ============================================================================
         let audioCtx = null;
         let masterGain = null;
@@ -574,7 +575,7 @@
         function setupContinuousVoices() {
             const now = audioCtx.currentTime;
 
-            // 1. CLOSED FOYER VOID ATMOSPHERE (Warm C2 + G2 + Eb3 + G3 + D4 deep analog room resonance)
+            // 1. CLOSED FOYER VOID ATMOSPHERE
             const voidGain = audioCtx.createGain();
             voidGain.gain.value = 0.0001;
             const voidFilter = audioCtx.createBiquadFilter();
@@ -597,7 +598,7 @@
             voidGain.connect(reverbSendGain);
             continuousNodes.FOYER_VOID = { gain: voidGain, filter: voidFilter };
 
-            // 2. ENTRANCE GLASS FACADE (Silky warm Eb4 + G4 + Bb4 + D5 + F5 lush glass pad)
+            // 2. ENTRANCE GLASS FACADE
             const glassGain = audioCtx.createGain();
             glassGain.gain.value = 0.0001;
             const glassFilter = audioCtx.createBiquadFilter();
@@ -621,7 +622,7 @@
             glassGain.connect(delaySendGain);
             continuousNodes.ENTRANCE_GLASS = { gain: glassGain, filter: glassFilter };
 
-            // 3. SKYLIGHT GLASS ROOF OVERHEAD (Ethereal soft G4 + Bb4 + C5 + D5 + G5 airy halo)
+            // 3. SKYLIGHT GLASS ROOF OVERHEAD
             const skyGain = audioCtx.createGain();
             skyGain.gain.value = 0.0001;
             const skyFilter = audioCtx.createBiquadFilter();
@@ -952,7 +953,7 @@
         }
 
         // ============================================================================
-        // 5. THREE.JS SCENE — HIGH-DENSITY STRUCTURED LIDAR POINT CLOUD + SHADED MESHES
+        // 5. THREE.JS SCENE — UNIFORMLY MIRRORED GEOMETRY, COLLIDERS & LIDAR POINT CLOUD
         // ============================================================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
@@ -971,15 +972,15 @@
         scene.add(ambientLight);
 
         const sunLight = new THREE.DirectionalLight(0xfff4e0, 0.95);
-        sunLight.position.set(130, 75, -45);
+        sunLight.position.set(130, 75, 45);
         scene.add(sunLight);
 
         const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.35);
-        fillLight.position.set(-60, 40, 30);
+        fillLight.position.set(-60, 40, -30);
         scene.add(fillLight);
 
         const foyerWarmLight = new THREE.PointLight(0xe5c378, 0.9, 45);
-        foyerWarmLight.position.set(58, 10.5, -14.5);
+        foyerWarmLight.position.set(58, 10.5, 14.5);
         scene.add(foyerWarmLight);
 
         const selectionProxyMeshes = [];
@@ -987,7 +988,7 @@
         const voiceMeshesMap = {};
         const allShadedMeshes = [];
         const allWireLines = [];
-        const darkCoreMeshes = []; // Subtle dark depth-occluder shells in LiDAR mode so walls/floors read clearly!
+        const darkCoreMeshes = [];
         let lidarPointsSystem = null;
 
         const MAX_RIPPLES = 10;
@@ -1011,13 +1012,12 @@
             side: THREE.DoubleSide
         });
 
-        // Subtle dark matte shell material for LiDAR mode so foreground rooms/stairs occlude distant background points
-        // (makes navigating inside the point cloud 10x clearer while keeping the pure point-cloud aesthetic!)
         const darkOccluderMat = new THREE.MeshBasicMaterial({
             color: 0x06080d,
             transparent: true,
             opacity: 0.72,
             depthWrite: true,
+            side: THREE.DoubleSide,
             polygonOffset: true,
             polygonOffsetFactor: 2,
             polygonOffsetUnits: 2
@@ -1048,8 +1048,29 @@
             });
 
             data.objects.forEach(obj => {
+                // Uniformly normalize Z to positive Rhino Y (z = Math.abs / mirror so Colonnade is at Z=0..7.4m on the Right
+                // and Entrance/East Wall is at Z=13.2..20.5m on the Left) regardless of cached JS version!
+                const vArr = obj.v.slice();
+                // Check if exported z is negative; if so, flip z -> -z so Z is strictly positive (+ry)
+                const flipZ = (obj.min[2] < 0 && obj.max[2] <= 0.001) || (obj.min[2] + obj.max[2] < 0);
+
+                if (flipZ) {
+                    for (let k = 2; k < vArr.length; k += 3) {
+                        vArr[k] = -vArr[k];
+                    }
+                }
+
+                const minX = obj.min[0];
+                const maxX = obj.max[0];
+                const minY = obj.min[1];
+                const maxY = obj.max[1];
+                const zA = flipZ ? -obj.min[2] : obj.min[2];
+                const zB = flipZ ? -obj.max[2] : obj.max[2];
+                const minZ = Math.min(zA, zB);
+                const maxZ = Math.max(zA, zB);
+
                 const geom = new THREE.BufferGeometry();
-                geom.setAttribute('position', new THREE.Float32BufferAttribute(obj.v, 3));
+                geom.setAttribute('position', new THREE.Float32BufferAttribute(vArr, 3));
                 geom.setIndex(obj.f);
                 geom.computeVertexNormals();
 
@@ -1061,17 +1082,16 @@
                     layer: obj.layer,
                     voice: obj.voice,
                     passThrough: obj.passThrough,
-                    min: { x: obj.min[0], y: obj.min[1], z: obj.min[2] },
-                    max: { x: obj.max[0], y: obj.max[1], z: obj.max[2] }
+                    min: { x: minX, y: minY, z: minZ },
+                    max: { x: maxX, y: maxY, z: maxZ }
                 };
                 mesh.userData = meta;
-                mesh.visible = false; // Start in LiDAR Point Cloud mode by default
+                mesh.visible = false; // Default to LiDAR Point Cloud mode
 
                 scene.add(mesh);
                 allShadedMeshes.push(mesh);
                 if (voiceMeshesMap[obj.voice]) voiceMeshesMap[obj.voice].push(mesh);
 
-                // Subtle dark depth-occluder shell for non-glass objects in LiDAR mode so you can clearly see walls, stairs & floors
                 if (!obj.passThrough && obj.voice !== 'ENTRANCE_GLASS' && obj.voice !== 'SKYLIGHT_ROOF') {
                     const occMesh = new THREE.Mesh(geom, darkOccluderMat);
                     occMesh.visible = true;
@@ -1079,16 +1099,15 @@
                     darkCoreMeshes.push(occMesh);
                 }
 
-                // Enlarged Selection Proxy for easy gaze/cursor interaction on thin columns & mullions
                 const cfg = VOICE_CONFIG[obj.voice] || VOICE_CONFIG.CONTEXT_MASS;
                 const pad = cfg.selectionPad || [0, 0, 0];
-                const rawSx = Math.max(0.05, obj.max[0] - obj.min[0]);
-                const rawSy = Math.max(0.05, obj.max[1] - obj.min[1]);
-                const rawSz = Math.max(0.05, obj.max[2] - obj.min[2]);
+                const rawSx = Math.max(0.05, maxX - minX);
+                const rawSy = Math.max(0.05, maxY - minY);
+                const rawSz = Math.max(0.05, maxZ - minZ);
 
-                const cx = (obj.min[0] + obj.max[0]) * 0.5;
-                const cy = (obj.min[1] + obj.max[1]) * 0.5;
-                const cz = (obj.min[2] + obj.max[2]) * 0.5;
+                const cx = (minX + maxX) * 0.5;
+                const cy = (minY + maxY) * 0.5;
+                const cz = (minZ + maxZ) * 0.5;
 
                 const proxyGeom = new THREE.BoxGeometry(
                     rawSx + pad[0] * 2.0,
@@ -1101,10 +1120,17 @@
                 scene.add(proxyMesh);
                 selectionProxyMeshes.push(proxyMesh);
 
-                // Wireframe Edges (only shown in Shaded / Hybrid mode, hidden in Pure LiDAR Point Cloud mode)
+                // Edges
+                let eArr = null;
                 if (obj.e && obj.e.length > 0) {
+                    eArr = obj.e.slice();
+                    if (flipZ) {
+                        for (let k = 2; k < eArr.length; k += 3) {
+                            eArr[k] = -eArr[k];
+                        }
+                    }
                     const edgeGeom = new THREE.BufferGeometry();
-                    edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(obj.e, 3));
+                    edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(eArr, 3));
                     const edgeMat = new THREE.LineBasicMaterial({
                         color: 0x1a1e29,
                         transparent: true,
@@ -1116,12 +1142,13 @@
                     allWireLines.push(wire);
                 }
 
-                // Solid collision boxes
+                // Solid collision boxes (skip pass-through glass, stairs, slabs, and the freestanding portico windbreak block)
                 if (
                     !obj.passThrough &&
                     obj.voice !== 'EXT_STAIR' &&
                     obj.voice !== 'INT_STAIR_DOWN' &&
                     obj.voice !== 'SKYLIGHT_ROOF' &&
+                    !obj.name.includes("Windbreak") &&
                     !obj.name.includes("FloorSlab") &&
                     !obj.name.includes("Roof") &&
                     !obj.name.includes("Ceiling") &&
@@ -1130,19 +1157,16 @@
                     solidColliderBoxes.push(meta);
                 }
 
-                // ====================================================================
-                // HIGH-DENSITY STRUCTURED LIDAR POINT CLOUD GENERATION
-                // ====================================================================
+                // Structured LiDAR Point Cloud Sampling (using the exact mirrored vArr & eArr!)
                 const vCol = new THREE.Color(cfg.colorHex);
 
-                // 1. Dense points along every architectural edge so stairs, columns, mullions & walls are razor-sharp!
-                if (obj.e && obj.e.length > 0) {
+                if (eArr && eArr.length > 0) {
                     const edgeSpacing = (obj.voice === 'EXT_STAIR' || obj.voice === 'INT_STAIR_DOWN' || obj.voice === 'FOYER_FRAMES' || obj.voice === 'EXT_COLUMNS')
                         ? 0.14
                         : 0.24;
-                    for (let eIdx = 0; eIdx < obj.e.length; eIdx += 6) {
-                        const x0 = obj.e[eIdx],     y0 = obj.e[eIdx + 1], z0 = obj.e[eIdx + 2];
-                        const x1 = obj.e[eIdx + 3], y1 = obj.e[eIdx + 4], z1 = obj.e[eIdx + 5];
+                    for (let eIdx = 0; eIdx < eArr.length; eIdx += 6) {
+                        const x0 = eArr[eIdx],     y0 = eArr[eIdx + 1], z0 = eArr[eIdx + 2];
+                        const x1 = eArr[eIdx + 3], y1 = eArr[eIdx + 4], z1 = eArr[eIdx + 5];
                         const segLen = Math.hypot(x1 - x0, y1 - y0, z1 - z0);
                         const steps = Math.min(160, Math.max(2, Math.ceil(segLen / edgeSpacing)));
                         for (let s = 0; s <= steps; s++) {
@@ -1152,7 +1176,6 @@
                                 y0 + (y1 - y0) * t,
                                 z0 + (z1 - z0) * t
                             );
-                            // Edges slightly brighter for crisp architectural legibility when walking inside
                             const b = 1.05 + Math.random() * 0.15;
                             lidarColors.push(
                                 Math.min(1, vCol.r * b),
@@ -1163,18 +1186,16 @@
                     }
                 }
 
-                // 2. Surface scan points across every triangle face of the Rhino mesh
                 const surfaceDensity = obj.voice === 'CONTEXT_MASS' ? 4.0 : 12.0;
                 for (let fIdx = 0; fIdx < obj.f.length; fIdx += 3) {
                     const i0 = obj.f[fIdx] * 3;
                     const i1 = obj.f[fIdx + 1] * 3;
                     const i2 = obj.f[fIdx + 2] * 3;
 
-                    const ax = obj.v[i0], ay = obj.v[i0 + 1], az = obj.v[i0 + 2];
-                    const bx = obj.v[i1], by = obj.v[i1 + 1], bz = obj.v[i1 + 2];
-                    const cxPt = obj.v[i2], cyPt = obj.v[i2 + 1], czPt = obj.v[i2 + 2];
+                    const ax = vArr[i0], ay = vArr[i0 + 1], az = vArr[i0 + 2];
+                    const bx = vArr[i1], by = vArr[i1 + 1], bz = vArr[i1 + 2];
+                    const cxPt = vArr[i2], cyPt = vArr[i2 + 1], czPt = vArr[i2 + 2];
 
-                    // Triangle area via cross product
                     const ux = bx - ax, uy = by - ay, uz = bz - az;
                     const vx = cxPt - ax, vy = cyPt - ay, vz = czPt - az;
                     const crossX = uy * vz - uz * vy;
@@ -1196,7 +1217,6 @@
                         const pz = az * r1 + bz * r2 + czPt * r3;
 
                         lidarPositions.push(px, py, pz);
-                        // Subtle elevation shading so floor vs ceiling height is immediately readable
                         const heightShade = 0.72 + 0.28 * Math.min(1.0, Math.max(0.0, (py + 2.0) / 16.0));
                         const jitter = (0.82 + Math.random() * 0.22) * heightShade;
                         lidarColors.push(vCol.r * jitter, vCol.g * jitter, vCol.b * jitter);
@@ -1204,31 +1224,31 @@
                 }
             });
 
-            // Glowing Blue Spatial Path Line on the floor (mirrored right-handed z = -ry)
+            // Glowing Blue Spatial Path Line on the floor (aligned with the mirrored entrance & gallery route!)
             const pathCurve = new THREE.CatmullRomCurve3([
-                new THREE.Vector3(104.5, 0.08, -14.0),
-                new THREE.Vector3(95.0,  2.85, -14.2),
-                new THREE.Vector3(86.6,  5.98, -15.8),
-                new THREE.Vector3(74.2,  5.98, -16.8),
-                new THREE.Vector3(62.0,  5.98, -14.5),
-                new THREE.Vector3(53.0,  5.98, -16.2),
-                new THREE.Vector3(44.5,  5.98, -18.2),
-                new THREE.Vector3(30.0,  5.98, -18.2),
-                new THREE.Vector3(27.0,  5.98, -15.0),
-                new THREE.Vector3(38.0,  2.60, -14.8),
-                new THREE.Vector3(46.2,  0.08, -14.8)
+                new THREE.Vector3(104.5, 0.08, 15.5),
+                new THREE.Vector3(95.0,  2.85, 15.8),
+                new THREE.Vector3(86.6,  5.98, 16.4),
+                new THREE.Vector3(74.2,  5.98, 16.8),
+                new THREE.Vector3(62.0,  5.98, 15.5),
+                new THREE.Vector3(53.0,  5.98, 16.2),
+                new THREE.Vector3(44.5,  5.98, 18.2),
+                new THREE.Vector3(30.0,  5.98, 18.2),
+                new THREE.Vector3(27.0,  5.98, 15.0),
+                new THREE.Vector3(38.0,  2.60, 14.8),
+                new THREE.Vector3(46.2,  0.08, 14.8)
             ]);
             const pathPts = pathCurve.getPoints(180);
             const pathGeom = new THREE.BufferGeometry().setFromPoints(pathPts);
             const pathMat = new THREE.LineBasicMaterial({
                 color: 0x4ea8ff,
                 transparent: true,
-                opacity: 0.70
+                opacity: 0.75
             });
             const glowingPathLine = new THREE.Line(pathGeom, pathMat);
             scene.add(glowingPathLine);
 
-            // LiDAR Point Cloud System (Normal Blending + Depth Testing so spatial depth is crystal-clear!)
+            // LiDAR Point Cloud System
             const ptGeom = new THREE.BufferGeometry();
             ptGeom.setAttribute('position', new THREE.Float32BufferAttribute(lidarPositions, 3));
             ptGeom.setAttribute('color', new THREE.Float32BufferAttribute(lidarColors, 3));
@@ -1307,17 +1327,17 @@
             });
 
             lidarPointsSystem = new THREE.Points(ptGeom, ptMat);
-            lidarPointsSystem.visible = true; // Default to LiDAR Point Cloud mode!
+            lidarPointsSystem.visible = true;
             scene.add(lidarPointsSystem);
         }
 
         buildRhinoScene();
 
         // ============================================================================
-        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION (MIRRORED RIGHT-HANDED z = -ry)
+        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION (ALIGNED WITH MIRRORED Z = +ry)
         // ============================================================================
         const PLAYER_EYE_HEIGHT = 1.72;
-        let playerFootPos = new THREE.Vector3(104.8, 0.0, -14.0);
+        let playerFootPos = new THREE.Vector3(WAYPOINTS[0].pos.x, WAYPOINTS[0].pos.y, WAYPOINTS[0].pos.z);
         let cameraYaw = Math.PI * 0.5;
         let cameraPitch = 0.06;
         const moveKeys = { w: false, a: false, s: false, d: false };
@@ -1332,11 +1352,10 @@
         lookCameraAt(WAYPOINTS[0].lookAt.x, WAYPOINTS[0].lookAt.y, WAYPOINTS[0].lookAt.z);
 
         function getArchitecturalFloorElevation(rx, threeZ, currentElev) {
-            // Convert Three.js z back to positive Rhino Y (ry = -threeZ)
-            const ry = -threeZ;
+            const ry = Math.abs(threeZ);
 
-            // 1. Grand Exterior Staircase (rx: 86.67..103.20, ry: 7.35..20.55)
-            if (rx >= 86.67 && rx <= 103.20 && ry >= 7.35 && ry <= 20.55) {
+            // 1. Grand Exterior Staircase (rx: 86.67..103.50, ry: 7.0..20.8)
+            if (rx >= 86.67 && rx <= 103.50 && ry >= 7.0 && ry <= 20.8) {
                 const t = (103.111 - rx) / (103.111 - 86.667);
                 return Math.max(0, Math.min(1, t)) * 5.926;
             }
@@ -1345,15 +1364,15 @@
                 const t = (46.370 - rx) / (46.370 - 26.074);
                 return Math.max(0, Math.min(1, t)) * 5.926;
             }
-            // 3. Upper Level (Piano Nobile)
+            // 3. Upper Level (Piano Nobile: Forecourt, Colonnade Terrace, Foyer, East Walkway)
             if (rx >= 0.0 && rx < 86.67 && ry >= 0.0 && ry <= 22.0) {
                 if (currentElev < 1.5 && rx > 44.0 && rx < 52.0 && ry >= 13.0 && ry <= 16.8) {
                     return 0.0;
                 }
                 return 5.926;
             }
-            // 4. West Colonnade South Plinth Extension
-            if (rx >= 86.67 && rx <= 103.26 && ry >= 0.0 && ry < 7.35 && currentElev > 3.5) {
+            // 4. Colonnade South Plinth Extension
+            if (rx >= 86.67 && rx <= 103.50 && ry >= 0.0 && ry < 7.35 && currentElev > 3.5) {
                 return 5.926;
             }
             return 0.0;
@@ -1439,10 +1458,10 @@
 
         function evaluateSpatialZoneAndGaze(dt) {
             const rx = playerFootPos.x;
-            const ry = -playerFootPos.z; // Positive Rhino Y (0..20.89m)
+            const ry = Math.abs(playerFootPos.z);
             const rz = playerFootPos.y;
 
-            isOnExteriorStair = (rx >= 86.5 && rx <= 103.5 && ry >= 7.3 && ry <= 20.6);
+            isOnExteriorStair = (rx >= 86.5 && rx <= 103.5 && ry >= 7.0 && ry <= 20.8);
             isInsideClosedMass = (rx >= 25.4 && rx <= 74.22 && ry >= 7.41 && ry <= 20.89 && rz >= 1.5);
 
             document.getElementById('vignette').classList.toggle('inside-void', isInsideClosedMass);
