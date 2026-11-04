@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>James-Simon-Galerie — Interactive Music Architecture</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap');
 
         :root {
             --bg: #050609;
-            --pill-bg: rgba(10, 12, 18, 0.58);
-            --pill-border: rgba(255, 255, 255, 0.11);
+            --panel-bg: rgba(9, 11, 16, 0.84);
+            --panel-border: rgba(255, 255, 255, 0.16);
             --accent: #e5c378;
             --blue-wave: #4ea8ff;
-            --text: rgba(255, 255, 255, 0.90);
-            --muted: rgba(255, 255, 255, 0.44);
+            --danger: #ff5c5c;
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.48);
         }
 
         * {
@@ -22,6 +23,7 @@
             margin: 0;
             padding: 0;
             user-select: none;
+            border-radius: 0 !important; /* Strict rectilinear architectural UI — zero rounded corners */
         }
 
         body {
@@ -45,44 +47,56 @@
             inset: 0;
             pointer-events: none;
             z-index: 2;
-            background: radial-gradient(circle at center, transparent 62%, rgba(3, 5, 10, 0.68) 100%);
+            background: radial-gradient(circle at center, transparent 62%, rgba(3, 5, 10, 0.70) 100%);
             transition: background 1.2s ease;
         }
         #vignette.inside-void {
             background: radial-gradient(circle at center, rgba(18, 28, 52, 0.10) 48%, rgba(2, 4, 10, 0.88) 100%);
         }
 
-        /* Minimalist Start Screen */
+        /* Rectilinear Start Screen */
         #overlay {
             position: fixed;
             inset: 0;
-            background: rgba(5, 6, 9, 0.92);
-            backdrop-filter: blur(20px);
+            background: rgba(5, 6, 9, 0.94);
+            backdrop-filter: blur(18px);
             z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.6s ease;
+            transition: opacity 0.5s ease;
             padding: 24px;
         }
 
+        .start-box {
+            border: 1px solid var(--panel-border);
+            background: rgba(10, 12, 18, 0.90);
+            padding: 36px 44px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 640px;
+            width: 100%;
+        }
+
         .start-title {
-            font-weight: 300;
-            font-size: 22px;
+            font-weight: 400;
+            font-size: 21px;
             letter-spacing: 8px;
             text-transform: uppercase;
             color: #fff;
             margin-bottom: 8px;
+            text-align: center;
         }
 
         .start-sub {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
+            font-size: 10.5px;
             letter-spacing: 2px;
             color: var(--muted);
             text-transform: uppercase;
-            margin-bottom: 36px;
+            margin-bottom: 32px;
             text-align: center;
         }
 
@@ -91,124 +105,161 @@
             gap: 12px;
             flex-wrap: wrap;
             justify-content: center;
+            width: 100%;
         }
 
-        .btn-minimal {
-            padding: 11px 24px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 999px;
+        .btn-rect {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.22);
             color: #fff;
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
         }
-        .btn-minimal:hover {
+        .btn-rect:hover {
             background: #fff;
             color: #050609;
             border-color: #fff;
         }
-        .btn-minimal.secondary {
+        .btn-rect.secondary {
             color: var(--blue-wave);
-            border-color: rgba(78, 168, 255, 0.40);
+            border-color: rgba(78, 168, 255, 0.45);
         }
-        .btn-minimal.secondary:hover {
+        .btn-rect.secondary:hover {
             background: var(--blue-wave);
             color: #050609;
         }
 
-        /* Ultra-Minimalist HUD */
+        /* Sharp Rectilinear HUD */
         #hud {
             position: fixed;
             inset: 0;
             pointer-events: none;
             z-index: 10;
             opacity: 0;
-            transition: opacity 0.6s ease;
+            transition: opacity 0.5s ease;
         }
 
-        /* Top-Left: Single Floating Pill */
-        .top-pill {
+        /* Top-Left: Sharp Architectural Command Bar */
+        .top-bar {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 16px;
+            left: 16px;
             display: flex;
-            align-items: center;
-            gap: 4px;
-            background: var(--pill-bg);
-            border: 1px solid var(--pill-border);
+            align-items: stretch;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
             backdrop-filter: blur(12px);
-            padding: 5px 8px;
-            border-radius: 999px;
             pointer-events: auto;
         }
 
-        .pill-btn {
+        .hud-btn {
             background: transparent;
             border: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.10);
             color: var(--muted);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10.5px;
             letter-spacing: 0.8px;
-            padding: 5px 11px;
-            border-radius: 999px;
+            padding: 9px 13px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .pill-btn:hover {
+        .hud-btn:last-child {
+            border-right: none;
+        }
+        .hud-btn:hover {
             color: #fff;
+            background: rgba(255, 255, 255, 0.06);
         }
-        .pill-btn.active {
-            background: rgba(255, 255, 255, 0.13);
+        .hud-btn.active {
+            background: rgba(255, 255, 255, 0.14);
             color: #fff;
+            border-bottom: 2px solid var(--accent);
         }
-        .pill-divider {
-            width: 1px;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.12);
-            margin: 0 2px;
+        .hud-btn.muted-state {
+            background: rgba(255, 92, 92, 0.18);
+            color: var(--danger);
+            border-bottom: 2px solid var(--danger);
         }
 
-        /* Top-Right: Subtle Zone Readout */
-        .zone-pill {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--pill-bg);
-            border: 1px solid var(--pill-border);
-            backdrop-filter: blur(12px);
-            padding: 8px 14px;
-            border-radius: 999px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10.5px;
-            letter-spacing: 1.5px;
-            color: var(--muted);
+        /* Walk Speed Slider Control inside Top Bar */
+        .speed-control {
             display: flex;
             align-items: center;
             gap: 8px;
+            padding: 0 13px;
+            border-right: 1px solid rgba(255, 255, 255, 0.10);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
         }
-        .zone-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--blue-wave);
-            box-shadow: 0 0 8px var(--blue-wave);
+        .speed-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 72px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.18);
+            outline: none;
+            cursor: pointer;
+        }
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 14px;
+            background: var(--accent);
+            cursor: pointer;
+            border: none;
+        }
+        .speed-val {
+            color: #fff;
+            min-width: 34px;
+            text-align: right;
         }
 
-        /* Center Magnetic Focus Reticle */
+        /* Top-Right: Sharp Zone Readout */
+        .zone-box {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(12px);
+            padding: 9px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            letter-spacing: 1.5px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .zone-square {
+            width: 7px;
+            height: 7px;
+            background: var(--blue-wave);
+        }
+
+        /* Center Sharp Square Focus Reticle */
         #reticle {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             transform: translate(-50%, -50%);
-            border: 1px solid rgba(255, 255, 255, 0.32);
-            border-radius: 50%;
-            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            transition: all 0.15s ease;
             pointer-events: none;
         }
         #reticle::after {
@@ -216,84 +267,205 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 3px;
-            height: 3px;
+            width: 2px;
+            height: 2px;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.55);
-            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.65);
         }
         #reticle.focused {
-            width: 34px;
-            height: 34px;
+            width: 30px;
+            height: 30px;
             border-color: var(--blue-wave);
             background: rgba(78, 168, 255, 0.10);
-            box-shadow: 0 0 18px rgba(78, 168, 255, 0.35);
         }
 
+        /* Gaze Caption Banner */
         #gaze-caption {
             position: absolute;
-            bottom: 54px;
+            bottom: 112px;
             left: 50%;
             transform: translateX(-50%);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10.5px;
             letter-spacing: 1.2px;
             color: var(--text);
-            background: var(--pill-bg);
-            border: 1px solid var(--pill-border);
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
             backdrop-filter: blur(10px);
-            padding: 5px 15px;
-            border-radius: 999px;
+            padding: 6px 14px;
             opacity: 0;
-            transition: opacity 0.22s ease;
+            transition: opacity 0.2s ease;
             pointer-events: none;
             white-space: nowrap;
+            text-transform: uppercase;
         }
         #gaze-caption.visible {
             opacity: 1;
         }
 
-        /* Bottom-Center: Minimalist 7-Voice Equalizer + Shortcuts */
-        .bottom-strip {
+        /* Bottom Dock: Interactive 16-Step Sequencer Bar + 7-Voice Triggers & Meters */
+        .bottom-dock {
             position: absolute;
-            bottom: 18px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            align-items: center;
-            gap: 16px;
-            background: var(--pill-bg);
-            border: 1px solid var(--pill-border);
-            backdrop-filter: blur(12px);
-            padding: 7px 16px;
-            border-radius: 999px;
+            flex-direction: column;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(14px);
             pointer-events: auto;
+            min-width: 780px;
+        }
+
+        /* Upper Row of Bottom Dock: Interactive 16-Step Sequencer Bar */
+        .sequencer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+            gap: 14px;
+        }
+
+        .seq-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .seq-selected-badge {
+            padding: 2px 7px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 9.5px;
+        }
+
+        #sequencer-ui {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 4px;
+            flex: 1;
+        }
+
+        .step-cell {
+            height: 22px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 2px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.28);
+        }
+        .step-cell:nth-child(4n+1) {
+            border-color: rgba(255, 255, 255, 0.32);
+        }
+        .step-cell:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+        .step-cell.current {
+            border-color: #ffffff;
+            background: rgba(255, 255, 255, 0.22);
+            color: #fff;
+        }
+        .step-cell.recorded {
+            background: rgba(229, 195, 120, 0.28);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .step-cell.recorded::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--step-color, var(--accent));
+        }
+
+        .seq-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .seq-mini-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            padding: 4px 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .seq-mini-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+
+        /* Lower Row of Bottom Dock: Interactive 7-Voice Trigger Pads & Live Meters */
+        .voice-strip-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 12px;
+            gap: 12px;
         }
 
         .mini-meters {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
+            flex: 1;
         }
+
         .mini-meter {
+            flex: 1;
             display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 5px 8px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .mini-meter:hover {
+            border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .mini-meter.selected-voice {
+            border-color: var(--accent);
+            background: rgba(229, 195, 120, 0.10);
+        }
+        .mini-meter-top {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 9.5px;
-            color: var(--muted);
+            color: var(--text);
         }
         .mini-bar-bg {
-            width: 26px;
+            width: 100%;
             height: 3px;
             background: rgba(255, 255, 255, 0.10);
-            border-radius: 99px;
             overflow: hidden;
         }
         .mini-bar-fill {
             height: 100%;
             width: 0%;
-            border-radius: 99px;
             transition: width 0.08s linear;
         }
 
@@ -302,81 +474,101 @@
             font-size: 9.5px;
             color: var(--muted);
             letter-spacing: 0.4px;
+            white-space: nowrap;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="jsg_model_data.js?v=4"></script>
+    <script src="jsg_model_data.js?v=5"></script>
 </head>
 <body>
 
     <div id="canvas-container"></div>
     <div id="vignette"></div>
 
-    <!-- Minimalist Start Screen -->
+    <!-- Sharp Rectilinear Start Screen -->
     <div id="overlay">
-        <div class="start-title">JAMES-SIMON-GALERIE</div>
-        <div class="start-sub">Audio-Spatial Path · 3D Point-Cloud &amp; Architectural Synth</div>
-        <div class="start-buttons">
-            <button class="btn-minimal" id="btn-start-free">Walk Freely</button>
-            <button class="btn-minimal secondary" id="btn-start-guided">Auto-Walk Spatial Path</button>
+        <div class="start-box">
+            <div class="start-title">JAMES-SIMON-GALERIE</div>
+            <div class="start-sub">Audio-Spatial Path · 3D Point-Cloud &amp; Architectural Sequencer</div>
+            <div class="start-buttons">
+                <button class="btn-rect" id="btn-start-free">Walk Freely</button>
+                <button class="btn-rect secondary" id="btn-start-guided">Auto-Walk Spatial Path</button>
+            </div>
         </div>
     </div>
 
-    <!-- Minimalist HUD -->
+    <!-- Sharp Rectilinear HUD -->
     <div id="hud">
-        <!-- Top-Left Controls Pill -->
-        <div class="top-pill">
-            <button class="pill-btn active" id="btn-mode-auto" onclick="setInteractionMode('AUTONOMOUS')" title="Mode 2: Building Speaks by Gaze & Location [M]">Building Speaks</button>
-            <button class="pill-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Elements to Play & Loop [M]">User Activates</button>
-            <div class="pill-divider"></div>
-            <button class="pill-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Spatial Path [R]">Route [R]</button>
-            <button class="pill-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: LiDAR Point Cloud [V]</button>
+        <!-- Top-Left Command Bar -->
+        <div class="top-bar">
+            <button class="hud-btn active" id="btn-mode-auto" onclick="setInteractionMode('AUTONOMOUS')" title="Mode 2: Building Speaks by Gaze & Location [M]">Building Speaks</button>
+            <button class="hud-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Architecture or Sequencer Steps to Play & Loop [M]">User Activates</button>
+            <button class="hud-btn" id="btn-mute" onclick="toggleAudioMute()" title="Mute / Stop All Audio [Space or P]">Audio: ON [P]</button>
+            <div class="speed-control" title="Adjust Walking Speed">
+                <span>Speed</span>
+                <input type="range" id="walk-speed-slider" class="speed-slider" min="0.8" max="6.0" step="0.2" value="2.4" oninput="updateWalkSpeed(this.value)">
+                <span class="speed-val" id="walk-speed-label">2.4m/s</span>
+            </div>
+            <button class="hud-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Spatial Path [R]">Route [R]</button>
+            <button class="hud-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: LiDAR [V]</button>
         </div>
 
         <!-- Top-Right Zone Readout -->
-        <div class="zone-pill">
-            <span class="zone-dot" id="zone-dot"></span>
+        <div class="zone-box">
+            <span class="zone-square" id="zone-dot"></span>
             <span id="zone-name">EXTERIOR STAIRS</span>
         </div>
 
-        <!-- Center Magnetic Gaze Reticle & Subtle Caption -->
+        <!-- Center Square Magnetic Gaze Reticle & Caption -->
         <div id="reticle"></div>
         <div id="gaze-caption"></div>
 
-        <!-- Bottom-Center Minimalist Voice Strip -->
-        <div class="bottom-strip">
-            <div class="mini-meters">
-                <div class="mini-meter" title="1. Exterior Stairs Pulse">
-                    <span>STAIR</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_STAIR" style="background:#5aa9ff"></div></div>
+        <!-- Bottom Dock: Interactive 16-Step Sequencer Bar + 7-Voice Pads -->
+        <div class="bottom-dock">
+            <div class="sequencer-row">
+                <div class="seq-info">
+                    <span id="seq-mode-label">16-STEP SEQUENCER</span>
+                    <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
                 </div>
-                <div class="mini-meter" title="2. Exterior Columns Arpeggio (Gaze + Proximity)">
-                    <span>COL</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_COLUMNS" style="background:#e5c378"></div></div>
-                </div>
-                <div class="mini-meter" title="3. Entrance Glass Harmonic Pad (Gaze + Proximity)">
-                    <span>GLASS</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-ENTRANCE_GLASS" style="background:#64e8de"></div></div>
-                </div>
-                <div class="mini-meter" title="4. Closed Foyer Void Atmosphere">
-                    <span>VOID</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_VOID" style="background:#9d7bff"></div></div>
-                </div>
-                <div class="mini-meter" title="5. Facade Frames Plucked Synth (Gaze + Proximity)">
-                    <span>FRAME</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_FRAMES" style="background:#ff9f68"></div></div>
-                </div>
-                <div class="mini-meter" title="6. Interior Descending Stair Scale (Gaze + Proximity)">
-                    <span>DOWN</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-INT_STAIR_DOWN" style="background:#69f0ae"></div></div>
-                </div>
-                <div class="mini-meter" title="7. Skylight Glass Roof Shimmer (Gaze + Proximity)">
-                    <span>ROOF</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-SKYLIGHT_ROOF" style="background:#70d6ff"></div></div>
+                <div id="sequencer-ui"></div>
+                <div class="seq-actions">
+                    <button class="seq-mini-btn" onclick="clearSequencerLoop()" title="Clear Recorded Loop [C]">Clear [C]</button>
                 </div>
             </div>
-            <div class="pill-divider"></div>
-            <div class="hint-text">WASD Walk · Mouse Look · [V] View · [1-6] Waypoints</div>
+
+            <div class="voice-strip-row">
+                <div class="mini-meters">
+                    <div class="mini-meter selected-voice" id="pad-EXT_STAIR" onclick="selectVoicePad('EXT_STAIR')" title="Click to Audition / Select for Sequencer (1. Exterior Stairs)">
+                        <div class="mini-meter-top"><span>1.STAIR</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_STAIR" style="background:#d8c39e"></div></div>
+                    </div>
+                    <div class="mini-meter" id="pad-EXT_COLUMNS" onclick="selectVoicePad('EXT_COLUMNS')" title="Click to Audition / Select for Sequencer (2. Terrace Columns)">
+                        <div class="mini-meter-top"><span>2.COL</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_COLUMNS" style="background:#f0cf85"></div></div>
+                    </div>
+                    <div class="mini-meter" id="pad-ENTRANCE_GLASS" onclick="selectVoicePad('ENTRANCE_GLASS')" title="Click to Audition / Select for Sequencer (3. Entrance Glass)">
+                        <div class="mini-meter-top"><span>3.GLASS</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-ENTRANCE_GLASS" style="background:#72efdd"></div></div>
+                    </div>
+                    <div class="mini-meter" id="pad-FOYER_VOID" onclick="selectVoicePad('FOYER_VOID')" title="Click to Audition / Select for Sequencer (4. Foyer Void)">
+                        <div class="mini-meter-top"><span>4.VOID</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_VOID" style="background:#b8b2d8"></div></div>
+                    </div>
+                    <div class="mini-meter" id="pad-FOYER_FRAMES" onclick="selectVoicePad('FOYER_FRAMES')" title="Click to Audition / Select for Sequencer (5. Facade Frames)">
+                        <div class="mini-meter-top"><span>5.FRAME</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_FRAMES" style="background:#f4a261"></div></div>
+                    </div>
+                    <div class="mini-meter" id="pad-INT_STAIR_DOWN" onclick="selectVoicePad('INT_STAIR_DOWN')" title="Click to Audition / Select for Sequencer (6. Descending Stair)">
+                        <div class="mini-meter-top"><span>6.DOWN</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-INT_STAIR_DOWN" style="background:#64dfdf"></div></div>
+                    </div>
+                    <div class="mini-meter" id="pad-SKYLIGHT_ROOF" onclick="selectVoicePad('SKYLIGHT_ROOF')" title="Click to Audition / Select for Sequencer (7. Skylight Roof)">
+                        <div class="mini-meter-top"><span>7.ROOF</span></div>
+                        <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-SKYLIGHT_ROOF" style="background:#80ffdb"></div></div>
+                    </div>
+                </div>
+                <div class="hint-text">WASD Walk · Click 3D / Steps to Record · [P] Mute · [1-6] Waypoints</div>
+            </div>
         </div>
     </div>
 
@@ -386,50 +578,66 @@
         // ============================================================================
         const VOICE_CONFIG = {
             EXT_STAIR: {
+                shortName: "STAIR",
                 label: "Exterior Stairs · Deep Electronic Pulse",
                 colorHex: 0xd8c39e,
+                colorCss: "#d8c39e",
                 maxDist: 45.0,
                 selectionPad: [0.35, 0.35, 0.35]
             },
             EXT_COLUMNS: {
+                shortName: "COL",
                 label: "Terrace Columns · Warm Synth Arpeggio",
                 colorHex: 0xf0cf85,
+                colorCss: "#f0cf85",
                 maxDist: 65.0,
                 selectionPad: [1.15, 0.40, 1.15]
             },
             ENTRANCE_GLASS: {
+                shortName: "GLASS",
                 label: "Entrance Glass Facade · Lush C-Minor9 Pad",
                 colorHex: 0x72efdd,
+                colorCss: "#72efdd",
                 maxDist: 50.0,
                 selectionPad: [0.60, 0.40, 0.60]
             },
             FOYER_VOID: {
+                shortName: "VOID",
                 label: "Closed Foyer Mass · Deep Architectural Void",
                 colorHex: 0xb8b2d8,
+                colorCss: "#b8b2d8",
                 maxDist: 50.0,
                 selectionPad: [0.10, 0.10, 0.10]
             },
             FOYER_FRAMES: {
+                shortName: "FRAME",
                 label: "Facade Frames · Warm Plucked Synth Rhythm",
                 colorHex: 0xf4a261,
+                colorCss: "#f4a261",
                 maxDist: 48.0,
                 selectionPad: [0.95, 0.55, 0.95]
             },
             INT_STAIR_DOWN: {
+                shortName: "DOWN",
                 label: "Interior Descending Stair · Cascading Analog Scale",
                 colorHex: 0x64dfdf,
+                colorCss: "#64dfdf",
                 maxDist: 45.0,
                 selectionPad: [0.55, 0.55, 0.55]
             },
             SKYLIGHT_ROOF: {
+                shortName: "ROOF",
                 label: "Skylight Glass Roof & Fins · High Shimmer Chord",
                 colorHex: 0x80ffdb,
+                colorCss: "#80ffdb",
                 maxDist: 48.0,
                 selectionPad: [0.85, 0.75, 0.85]
             },
             CONTEXT_MASS: {
+                shortName: "MASS",
                 label: "Architectural Plinth & Mass",
                 colorHex: 0x6c7a89,
+                colorCss: "#6c7a89",
                 maxDist: 38.0,
                 selectionPad: [0.0, 0.0, 0.0]
             }
@@ -446,33 +654,67 @@
         ];
 
         // ============================================================================
-        // 2. MIRRORED COORDINATE SYSTEM (Left <-> Right Mirrored)
-        //    We mirror the entire scene along the building's longitudinal axis (Z = +ry)
-        //    so that climbing from X = 105m -> X = 26m:
-        //      - Everything that was on the Left is now on the RIGHT (Colonnade Terrace at Z = 0..7.4m)
-        //      - Everything that was on the Right is now on the LEFT (Entrance Doors & East Gallery at Z = 13.2..20.5m)
-        //      - Starting Point, Waypoints, Path Curve, and Collision Boxes all use the EXACT same mirrored Z!
+        // 2. TRUE RIGHT-HANDED MIRRORED SYSTEM (z = -ry, negative Z!)
+        //    Why negative Z is essential:
+        //    When standing at X = 104.8m looking North toward X = 86.0m (-X direction):
+        //      - Camera Right vector is -Z, Camera Left vector is +Z.
+        //      - With z = -ry:
+        //        * Colonnade Terrace (ry = 0..7.4m -> z = -7.4..0m) is on your LEFT!
+        //        * Entrance Doors & East Wall (ry = 13.2..20.5m -> z = -20.5..-13.2m) is on your RIGHT ->
+        //          WAIT: The user explicitly requested:
+        //          "mirror all of the system (right side of the building should be at the left)"
+        //          Let's verify both and make sure every single coordinate (Geometry, Colliders,
+        //          Waypoints, Path Curve, Elevation Solver) uses the exact same sign `MIRROR_SIGN`!
         // ============================================================================
+        // Let's check:
+        // In the previous version (`ef8fd1f`), `z = +ry` placed:
+        //   - Colonnade (`z = +0..+7.4`) on the RIGHT
+        //   - Entrance / Foyer Wall (`z = +13.2..+20.5`) on the LEFT.
+        // The user just saw `ef8fd1f` (or `b9fd5a6`) and said:
+        //   "you have to mirror all of the system (right side of the building should be at the left)"
+        // With `z = -ry` (`MIRROR_SIGN = -1`):
+        //   - When facing -X (climbing stairs from X=104.8 -> 86.0):
+        //     Camera Forward = (-1, 0, 0)
+        //     Camera Up      = (0, 1, 0)
+        //     Camera Right   = Forward x Up = (-1,0,0) x (0,1,0) = (0, 0, -1) -> MORE NEGATIVE Z is RIGHT!
+        //     Camera Left    = (0, 0, +1) -> MORE POSITIVE Z is LEFT!
+        // Look at that vector cross product:
+        //   Forward = (-1, 0, 0), Up = (0, 1, 0)
+        //   Right = Forward × Up = (0, 0, -1)!
+        //   So in Three.js, when looking toward -X:
+        //     - Negative Z (-20) is on the RIGHT side of the screen!
+        //     - Positive Z (+20) is on the LEFT side of the screen!
+        // That's why when `jsg_model_data.js` had negative Z (`z = -ry`), the Colonnade (`z = -0..-7.4`) was on the LEFT (`z near 0` vs `z = -15.5`) and East Wall (`z = -20.5`) was on the RIGHT!
+        // And when `ef8fd1f` flipped `z` to positive (`z = +ry`), the Colonnade (`z = +0..+7.4`) moved to the RIGHT of `z = +15.5`!
+        // Therefore, `z = -ry` (negative Z) puts the West Colonnade on the LEFT and the East Wall on the RIGHT!
+        // Let's verify with cross product:
+        //   Player is at `z = -15.5` looking toward `-X` (`(-1, 0, 0)`).
+        //   Camera Right is `(0, 0, -1)` (toward `z = -20.5`).
+        //   Camera Left is `(0, 0, +1)` (toward `z = -7.4` and `0.0`).
+        //   So at `z = -15.5`:
+        //     - Looking LEFT (`+Z` direction, toward `z = -4.0`) looks at the Colonnade (`z = -7.4..0.0`)!
+        //     - Looking RIGHT (`-Z` direction, toward `z = -20.5`) looks at the East Wall (`z = -20.5`)!
+
         const WAYPOINTS = [
-            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: 15.5 }, lookAt: { x: 86.0, y: 6.5,  z: 16.5 } },
-            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: 15.8 }, lookAt: { x: 78.0, y: 9.0,  z: 3.8  } },
-            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: 16.8 }, lookAt: { x: 74.2, y: 8.8,  z: 16.8 } },
-            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: 15.8 }, lookAt: { x: 48.0, y: 8.5,  z: 14.8 } },
-            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: 15.5 }, lookAt: { x: 52.0, y: 8.2,  z: 20.5 } },
-            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: 18.4 }, lookAt: { x: 35.0, y: 3.5,  z: 14.8 } }
+            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: -15.5 }, lookAt: { x: 86.0, y: 6.5,  z: -16.5 } },
+            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: -15.8 }, lookAt: { x: 78.0, y: 9.0,  z: -3.8  } },
+            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: -16.8 }, lookAt: { x: 74.2, y: 8.8,  z: -16.8 } },
+            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: -15.8 }, lookAt: { x: 48.0, y: 8.5,  z: -14.8 } },
+            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: -15.5 }, lookAt: { x: 52.0, y: 8.2,  z: -20.5 } },
+            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: -18.4 }, lookAt: { x: 35.0, y: 3.5,  z: -14.8 } }
         ];
 
         const AUTO_ROUTE_KEYFRAMES = [
-            { t: 0,  pos: [105.0, 0.00, 15.5], look: [88.0, 5.5, 16.5] },
-            { t: 7,  pos: [96.5,  2.28, 15.8], look: [82.0, 8.8, 3.8]  },
-            { t: 14, pos: [88.5,  5.30, 16.4], look: [75.0, 9.0, 4.2]  },
-            { t: 20, pos: [82.5,  5.93, 16.8], look: [74.2, 8.8, 16.8] },
-            { t: 27, pos: [74.8,  5.93, 16.8], look: [68.8, 8.5, 16.8] },
-            { t: 33, pos: [64.0,  5.93, 15.6], look: [48.0, 8.2, 14.2] },
-            { t: 40, pos: [54.5,  5.93, 15.4], look: [52.5, 8.2, 20.5] },
-            { t: 46, pos: [45.0,  5.93, 18.3], look: [35.5, 2.8, 14.8] },
-            { t: 52, pos: [36.5,  5.93, 18.3], look: [35.0, 14.1, 14.7] },
-            { t: 58, pos: [29.0,  5.93, 18.3], look: [38.0, 3.0, 14.8] }
+            { t: 0,  pos: [105.0, 0.00, -15.5], look: [88.0, 5.5, -16.5] },
+            { t: 9,  pos: [96.5,  2.28, -15.8], look: [82.0, 8.8, -3.8]  },
+            { t: 18, pos: [88.5,  5.30, -16.4], look: [75.0, 9.0, -4.2]  },
+            { t: 26, pos: [82.5,  5.93, -16.8], look: [74.2, 8.8, -16.8] },
+            { t: 35, pos: [74.8,  5.93, -16.8], look: [68.8, 8.5, -16.8] },
+            { t: 44, pos: [64.0,  5.93, -15.6], look: [48.0, 8.2, -14.2] },
+            { t: 54, pos: [54.5,  5.93, -15.4], look: [52.5, 8.2, -20.5] },
+            { t: 64, pos: [45.0,  5.93, -18.3], look: [35.5, 2.8, -14.8] },
+            { t: 74, pos: [36.5,  5.93, -18.3], look: [35.0, 14.1, -14.7] },
+            { t: 84, pos: [29.0,  5.93, -18.3], look: [38.0, 3.0, -14.8] }
         ];
 
         // ============================================================================
@@ -481,6 +723,10 @@
         let interactionMode = 'AUTONOMOUS';
         let visualStyle = 'LIDAR';
         let isRunning = false;
+        let isMuted = false;
+        let walkSpeed = 2.4; // Slower, natural architectural walking speed (adjustable via slider 0.8 - 6.0 m/s)
+        let selectedSequencerVoice = 'EXT_STAIR';
+
         let isPointerLocked = false;
         let autoRouteActive = false;
         let autoRouteTime = 0;
@@ -499,7 +745,7 @@
         const voiceTargetLevels = { ...voiceLevels };
 
         // ============================================================================
-        // 4. PURE WEB AUDIO SYNTHESIS ENGINE (NO BACKGROUND VIDEO TRACK)
+        // 4. WEB AUDIO SYNTHESIS ENGINE + MUTE CONTROL + INTERACTIVE 16-STEP SEQUENCER
         // ============================================================================
         let audioCtx = null;
         let masterGain = null;
@@ -511,10 +757,100 @@
 
         const continuousNodes = {};
 
-        const BPM = 120;
+        const BPM = 116;
         const STEP_TIME_MS = ((60 / BPM) / 4) * 1000;
         let currentStep = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
+
+        // Build 16-step interactive sequencer bar cells in the DOM
+        const seqContainer = document.getElementById('sequencer-ui');
+        for (let i = 0; i < 16; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'step-cell';
+            cell.id = `step-${i}`;
+            cell.innerText = (i + 1);
+            cell.title = `Step ${i + 1}: Click to toggle ${selectedSequencerVoice} on this step`;
+            cell.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                initAudioEngine();
+                toggleStepInSequencer(i);
+            });
+            seqContainer.appendChild(cell);
+        }
+
+        function selectVoicePad(voiceKey) {
+            initAudioEngine();
+            selectedSequencerVoice = voiceKey;
+            const cfg = VOICE_CONFIG[voiceKey] || VOICE_CONFIG.EXT_STAIR;
+            document.getElementById('seq-selected-voice').innerText = `VOICE: ${cfg.shortName}`;
+            document.getElementById('seq-selected-voice').style.borderColor = cfg.colorCss;
+            document.getElementById('seq-selected-voice').style.color = cfg.colorCss;
+
+            ACTIVE_VOICE_KEYS.forEach(vk => {
+                const pad = document.getElementById(`pad-${vk}`);
+                if (pad) pad.classList.toggle('selected-voice', vk === voiceKey);
+            });
+
+            // Audition the sound immediately when clicking the voice pad!
+            triggerVoiceStep(voiceKey, currentStep, 0.90);
+        }
+
+        function toggleStepInSequencer(stepIdx) {
+            const list = sequencerSteps[stepIdx];
+            const existingIdx = list.findIndex(item => item.voice === selectedSequencerVoice);
+            if (existingIdx >= 0) {
+                list.splice(existingIdx, 1);
+            } else {
+                const pos = camera.position.clone().add(new THREE.Vector3(0, 0, -4).applyQuaternion(camera.quaternion));
+                list.push({ voice: selectedSequencerVoice, point: pos });
+                triggerVoiceStep(selectedSequencerVoice, stepIdx, 0.90);
+            }
+            refreshSequencerStepUI(stepIdx);
+        }
+
+        function refreshSequencerStepUI(stepIdx) {
+            const cell = document.getElementById(`step-${stepIdx}`);
+            if (!cell) return;
+            const list = sequencerSteps[stepIdx];
+            if (list && list.length > 0) {
+                cell.classList.add('recorded');
+                const lastVoice = list[list.length - 1].voice;
+                const cfg = VOICE_CONFIG[lastVoice] || VOICE_CONFIG.EXT_STAIR;
+                cell.style.setProperty('--step-color', cfg.colorCss);
+            } else {
+                cell.classList.remove('recorded');
+                cell.style.removeProperty('--step-color');
+            }
+        }
+
+        function clearSequencerLoop() {
+            sequencerSteps = Array.from({ length: 16 }, () => []);
+            for (let i = 0; i < 16; i++) refreshSequencerStepUI(i);
+        }
+
+        function toggleAudioMute() {
+            initAudioEngine();
+            isMuted = !isMuted;
+            const btn = document.getElementById('btn-mute');
+            if (isMuted) {
+                btn.innerText = "Audio: MUTED [P]";
+                btn.classList.add('muted-state');
+                if (masterGain && audioCtx) {
+                    masterGain.gain.setTargetAtTime(0.00001, audioCtx.currentTime, 0.04);
+                }
+            } else {
+                btn.innerText = "Audio: ON [P]";
+                btn.classList.remove('muted-state');
+                if (masterGain && audioCtx) {
+                    masterGain.gain.setTargetAtTime(0.80, audioCtx.currentTime, 0.06);
+                }
+            }
+        }
+
+        function updateWalkSpeed(val) {
+            walkSpeed = parseFloat(val) || 2.4;
+            document.getElementById('walk-speed-label').innerText = `${walkSpeed.toFixed(1)}m/s`;
+        }
 
         function initAudioEngine() {
             if (audioCtx) {
@@ -531,7 +867,7 @@
             compressor.release.setValueAtTime(0.22, audioCtx.currentTime);
 
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.80;
+            masterGain.gain.value = isMuted ? 0.00001 : 0.80;
 
             reverbNode = audioCtx.createConvolver();
             const revLen = Math.floor(audioCtx.sampleRate * 3.4);
@@ -652,7 +988,7 @@
             const now = audioCtx.currentTime;
 
             for (const key of ACTIVE_VOICE_KEYS) {
-                const target = voiceTargetLevels[key] || 0;
+                const target = isMuted ? 0 : (voiceTargetLevels[key] || 0);
                 const curr = voiceLevels[key] || 0;
                 const speed = target > curr ? 4.2 : 2.4;
                 voiceLevels[key] = curr + (target - curr) * Math.min(1, dt * speed);
@@ -689,7 +1025,7 @@
         }
 
         function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
-            if (!audioCtx || intensity <= 0.02) return;
+            if (!audioCtx || isMuted || intensity <= 0.02) return;
             const now = audioCtx.currentTime;
 
             if (voiceKey === 'EXT_STAIR') {
@@ -898,6 +1234,21 @@
             setInterval(() => {
                 if (!isRunning) return;
 
+                // Update 16-step playhead UI
+                document.querySelectorAll('.step-cell').forEach(c => c.classList.remove('current'));
+                const curCell = document.getElementById(`step-${currentStep}`);
+                if (curCell) curCell.classList.add('current');
+
+                // Always play any user-recorded steps on the 16-step sequencer bar!
+                const events = sequencerSteps[currentStep];
+                if (events && events.length > 0) {
+                    events.forEach(ev => {
+                        triggerVoiceStep(ev.voice, currentStep, 0.85);
+                        if (ev.point) spawnRipple(ev.point, VOICE_CONFIG[ev.voice]?.colorHex || 0xe5c378);
+                    });
+                }
+
+                // In Mode 2 ("Building Speaks"), also trigger autonomous spatial/gaze voices
                 if (interactionMode === 'AUTONOMOUS') {
                     if (voiceLevels.EXT_STAIR > 0.05) {
                         if (currentStep % 2 === 0) {
@@ -938,14 +1289,6 @@
                     if (voiceLevels.FOYER_VOID > 0.15 && currentStep === 0) {
                         triggerVoiceStep('FOYER_VOID', currentStep, voiceLevels.FOYER_VOID);
                     }
-                } else {
-                    const events = sequencerSteps[currentStep];
-                    if (events && events.length > 0) {
-                        events.forEach(ev => {
-                            triggerVoiceStep(ev.voice, currentStep, 0.85);
-                            spawnRipple(ev.point, VOICE_CONFIG[ev.voice]?.colorHex || 0xe5c378);
-                        });
-                    }
                 }
 
                 currentStep = (currentStep + 1) % 16;
@@ -953,7 +1296,10 @@
         }
 
         // ============================================================================
-        // 5. THREE.JS SCENE — UNIFORMLY MIRRORED GEOMETRY, COLLIDERS & LIDAR POINT CLOUD
+        // 5. THREE.JS SCENE — TRUE RIGHT-HANDED MIRRORED GEOMETRY (z = -ry)
+        //    When climbing from X=104.8m -> X=26m facing -X:
+        //      - LEFT side  (+Z direction) = West Colonnade Terrace (z = -7.4m .. 0.0m)
+        //      - RIGHT side (-Z direction) = Entrance Doors & East Wall (z = -20.5m .. -13.2m)
         // ============================================================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
@@ -972,15 +1318,15 @@
         scene.add(ambientLight);
 
         const sunLight = new THREE.DirectionalLight(0xfff4e0, 0.95);
-        sunLight.position.set(130, 75, 45);
+        sunLight.position.set(130, 75, -45);
         scene.add(sunLight);
 
         const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.35);
-        fillLight.position.set(-60, 40, -30);
+        fillLight.position.set(-60, 40, 30);
         scene.add(fillLight);
 
         const foyerWarmLight = new THREE.PointLight(0xe5c378, 0.9, 45);
-        foyerWarmLight.position.set(58, 10.5, 14.5);
+        foyerWarmLight.position.set(58, 10.5, -14.5);
         scene.add(foyerWarmLight);
 
         const selectionProxyMeshes = [];
@@ -1047,14 +1393,15 @@
                 voiceMeshesMap[vk] = [];
             });
 
-            data.objects.forEach(obj => {
-                // Uniformly normalize Z to positive Rhino Y (z = Math.abs / mirror so Colonnade is at Z=0..7.4m on the Right
-                // and Entrance/East Wall is at Z=13.2..20.5m on the Left) regardless of cached JS version!
-                const vArr = obj.v.slice();
-                // Check if exported z is negative; if so, flip z -> -z so Z is strictly positive (+ry)
-                const flipZ = (obj.min[2] < 0 && obj.max[2] <= 0.001) || (obj.min[2] + obj.max[2] < 0);
+            // Detect if the loaded JS data has positive Z or negative Z so we strictly enforce negative Z (z = -ry)
+            // In Rhino, the main building sits at ry = 0..20.89m, so in negative Z its center is around -10m.
+            let sumZ = 0;
+            data.objects.forEach(o => { sumZ += (o.min[2] + o.max[2]) * 0.5; });
+            const needNegateZ = (sumZ > 0); // If average Z is positive, negate Z so z = -ry!
 
-                if (flipZ) {
+            data.objects.forEach(obj => {
+                const vArr = obj.v.slice();
+                if (needNegateZ) {
                     for (let k = 2; k < vArr.length; k += 3) {
                         vArr[k] = -vArr[k];
                     }
@@ -1064,8 +1411,8 @@
                 const maxX = obj.max[0];
                 const minY = obj.min[1];
                 const maxY = obj.max[1];
-                const zA = flipZ ? -obj.min[2] : obj.min[2];
-                const zB = flipZ ? -obj.max[2] : obj.max[2];
+                const zA = needNegateZ ? -obj.min[2] : obj.min[2];
+                const zB = needNegateZ ? -obj.max[2] : obj.max[2];
                 const minZ = Math.min(zA, zB);
                 const maxZ = Math.max(zA, zB);
 
@@ -1086,7 +1433,7 @@
                     max: { x: maxX, y: maxY, z: maxZ }
                 };
                 mesh.userData = meta;
-                mesh.visible = false; // Default to LiDAR Point Cloud mode
+                mesh.visible = false;
 
                 scene.add(mesh);
                 allShadedMeshes.push(mesh);
@@ -1120,11 +1467,10 @@
                 scene.add(proxyMesh);
                 selectionProxyMeshes.push(proxyMesh);
 
-                // Edges
                 let eArr = null;
                 if (obj.e && obj.e.length > 0) {
                     eArr = obj.e.slice();
-                    if (flipZ) {
+                    if (needNegateZ) {
                         for (let k = 2; k < eArr.length; k += 3) {
                             eArr[k] = -eArr[k];
                         }
@@ -1142,7 +1488,6 @@
                     allWireLines.push(wire);
                 }
 
-                // Solid collision boxes (skip pass-through glass, stairs, slabs, and the freestanding portico windbreak block)
                 if (
                     !obj.passThrough &&
                     obj.voice !== 'EXT_STAIR' &&
@@ -1157,7 +1502,7 @@
                     solidColliderBoxes.push(meta);
                 }
 
-                // Structured LiDAR Point Cloud Sampling (using the exact mirrored vArr & eArr!)
+                // High-Density Structured LiDAR Point Cloud Sampling
                 const vCol = new THREE.Color(cfg.colorHex);
 
                 if (eArr && eArr.length > 0) {
@@ -1224,19 +1569,19 @@
                 }
             });
 
-            // Glowing Blue Spatial Path Line on the floor (aligned with the mirrored entrance & gallery route!)
+            // Glowing Blue Spatial Path Line on the floor (in negative Z: z = -15.5 .. -18.2)
             const pathCurve = new THREE.CatmullRomCurve3([
-                new THREE.Vector3(104.5, 0.08, 15.5),
-                new THREE.Vector3(95.0,  2.85, 15.8),
-                new THREE.Vector3(86.6,  5.98, 16.4),
-                new THREE.Vector3(74.2,  5.98, 16.8),
-                new THREE.Vector3(62.0,  5.98, 15.5),
-                new THREE.Vector3(53.0,  5.98, 16.2),
-                new THREE.Vector3(44.5,  5.98, 18.2),
-                new THREE.Vector3(30.0,  5.98, 18.2),
-                new THREE.Vector3(27.0,  5.98, 15.0),
-                new THREE.Vector3(38.0,  2.60, 14.8),
-                new THREE.Vector3(46.2,  0.08, 14.8)
+                new THREE.Vector3(104.5, 0.08, -15.5),
+                new THREE.Vector3(95.0,  2.85, -15.8),
+                new THREE.Vector3(86.6,  5.98, -16.4),
+                new THREE.Vector3(74.2,  5.98, -16.8),
+                new THREE.Vector3(62.0,  5.98, -15.5),
+                new THREE.Vector3(53.0,  5.98, -16.2),
+                new THREE.Vector3(44.5,  5.98, -18.2),
+                new THREE.Vector3(30.0,  5.98, -18.2),
+                new THREE.Vector3(27.0,  5.98, -15.0),
+                new THREE.Vector3(38.0,  2.60, -14.8),
+                new THREE.Vector3(46.2,  0.08, -14.8)
             ]);
             const pathPts = pathCurve.getPoints(180);
             const pathGeom = new THREE.BufferGeometry().setFromPoints(pathPts);
@@ -1334,7 +1679,7 @@
         buildRhinoScene();
 
         // ============================================================================
-        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION (ALIGNED WITH MIRRORED Z = +ry)
+        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION (z = -ry, negative Z)
         // ============================================================================
         const PLAYER_EYE_HEIGHT = 1.72;
         let playerFootPos = new THREE.Vector3(WAYPOINTS[0].pos.x, WAYPOINTS[0].pos.y, WAYPOINTS[0].pos.z);
@@ -1354,24 +1699,20 @@
         function getArchitecturalFloorElevation(rx, threeZ, currentElev) {
             const ry = Math.abs(threeZ);
 
-            // 1. Grand Exterior Staircase (rx: 86.67..103.50, ry: 7.0..20.8)
             if (rx >= 86.67 && rx <= 103.50 && ry >= 7.0 && ry <= 20.8) {
                 const t = (103.111 - rx) / (103.111 - 86.667);
                 return Math.max(0, Math.min(1, t)) * 5.926;
             }
-            // 2. Interior Descending Staircase (rx: 26.07..46.37, ry: 13.18..16.76)
             if (rx >= 26.07 && rx <= 46.37 && ry >= 13.18 && ry < 16.76) {
                 const t = (46.370 - rx) / (46.370 - 26.074);
                 return Math.max(0, Math.min(1, t)) * 5.926;
             }
-            // 3. Upper Level (Piano Nobile: Forecourt, Colonnade Terrace, Foyer, East Walkway)
             if (rx >= 0.0 && rx < 86.67 && ry >= 0.0 && ry <= 22.0) {
                 if (currentElev < 1.5 && rx > 44.0 && rx < 52.0 && ry >= 13.0 && ry <= 16.8) {
                     return 0.0;
                 }
                 return 5.926;
             }
-            // 4. Colonnade South Plinth Extension
             if (rx >= 86.67 && rx <= 103.50 && ry >= 0.0 && ry < 7.35 && currentElev > 3.5) {
                 return 5.926;
             }
@@ -1520,7 +1861,8 @@
                 }
 
                 reticleEl.classList.add('focused');
-                captionEl.innerText = `${cfg.label} · ${dist.toFixed(1)}m`;
+                const actionHint = interactionMode === 'ACTIVE' ? ' · [CLICK TO RECORD STEP]' : '';
+                captionEl.innerText = `${cfg.label} · ${dist.toFixed(1)}m${actionHint}`;
                 captionEl.classList.add('visible');
 
                 if (lidarPointsSystem) {
@@ -1549,12 +1891,14 @@
         }
 
         // ============================================================================
-        // 8. MINIMALIST UI CONTROLS
+        // 8. UI CONTROLS
         // ============================================================================
         function setInteractionMode(mode) {
             interactionMode = mode;
             document.getElementById('btn-mode-auto').classList.toggle('active', mode === 'AUTONOMOUS');
             document.getElementById('btn-mode-act').classList.toggle('active', mode === 'ACTIVE');
+            document.getElementById('seq-mode-label').innerText =
+                mode === 'ACTIVE' ? 'ACTIVE LOOP RECORDER (CLICK 3D OR STEPS)' : '16-STEP SEQUENCER';
         }
 
         function toggleGuidedRoute(forceState) {
@@ -1568,7 +1912,7 @@
             const btn = document.getElementById('btn-view');
 
             if (visualStyle === 'LIDAR') {
-                btn.innerText = "View: LiDAR Point Cloud [V]";
+                btn.innerText = "View: LiDAR [V]";
                 allShadedMeshes.forEach(m => m.visible = false);
                 allWireLines.forEach(l => l.visible = false);
                 darkCoreMeshes.forEach(d => d.visible = true);
@@ -1610,7 +1954,7 @@
                 } else {
                     container.requestPointerLock();
                 }
-            }, 500);
+            }, 400);
         }
 
         document.getElementById('btn-start-free').addEventListener('click', () => startExperience(false));
@@ -1624,8 +1968,8 @@
         document.addEventListener('mousemove', (e) => {
             if (!isRunning) return;
             if (isPointerLocked && !autoRouteActive) {
-                cameraYaw -= e.movementX * 0.0022;
-                cameraPitch -= e.movementY * 0.0022;
+                cameraYaw -= e.movementX * 0.0020;
+                cameraPitch -= e.movementY * 0.0020;
                 cameraPitch = Math.max(-Math.PI / 2.15, Math.min(Math.PI / 2.15, cameraPitch));
                 camera.rotation.y = cameraYaw;
                 camera.rotation.x = cameraPitch;
@@ -1635,6 +1979,8 @@
             }
         });
 
+        // Clicking in the 3D scene triggers the gazed element's voice, spawns a 3D ripple,
+        // selects that voice in the bottom bar, and records it into the current step in User Activates mode!
         container.addEventListener('mousedown', (e) => {
             if (!isRunning || e.button !== 0) return;
             initAudioEngine();
@@ -1644,13 +1990,19 @@
             if (currentGazeHit && currentGazeHit.voice) {
                 const v = currentGazeHit.voice;
                 const cfg = VOICE_CONFIG[v] || VOICE_CONFIG.CONTEXT_MASS;
-                triggerVoiceStep(v, currentStep, 0.90);
+                if (ACTIVE_VOICE_KEYS.includes(v)) {
+                    selectVoicePad(v);
+                } else {
+                    triggerVoiceStep(v, currentStep, 0.90);
+                }
                 spawnRipple(currentGazeHit.point, cfg.colorHex);
+
                 if (interactionMode === 'ACTIVE') {
                     sequencerSteps[currentStep].push({
                         voice: v,
                         point: currentGazeHit.point.clone()
                     });
+                    refreshSequencerStepUI(currentStep);
                 }
             }
         });
@@ -1663,9 +2015,13 @@
             if (k === 'd' || e.key === 'ArrowRight') { moveKeys.d = true; if (autoRouteActive) toggleGuidedRoute(false); }
 
             if (k === 'm') setInteractionMode(interactionMode === 'AUTONOMOUS' ? 'ACTIVE' : 'AUTONOMOUS');
+            if (k === 'p' || e.code === 'Space') {
+                e.preventDefault();
+                toggleAudioMute();
+            }
             if (k === 'r') toggleGuidedRoute();
             if (k === 'v') cycleVisualStyle();
-            if (k === 'c') sequencerSteps = Array.from({ length: 16 }, () => []);
+            if (k === 'c') clearSequencerLoop();
             if (['1', '2', '3', '4', '5', '6'].includes(k)) teleportToWaypoint(parseInt(k, 10) - 1);
         });
 
@@ -1683,8 +2039,10 @@
         const clock = new THREE.Clock();
 
         function updateAutoRoute(dt) {
+            // Scale auto-walk progression speed proportionally to the user's speed slider!
+            const speedRatio = walkSpeed / 2.4;
             const totalDuration = AUTO_ROUTE_KEYFRAMES[AUTO_ROUTE_KEYFRAMES.length - 1].t;
-            autoRouteTime = (autoRouteTime + dt) % totalDuration;
+            autoRouteTime = (autoRouteTime + dt * speedRatio) % totalDuration;
 
             let k0 = AUTO_ROUTE_KEYFRAMES[0];
             let k1 = AUTO_ROUTE_KEYFRAMES[1];
@@ -1722,7 +2080,6 @@
                 if (autoRouteActive) {
                     updateAutoRoute(dt);
                 } else {
-                    const walkSpeed = 6.2;
                     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
                     const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
 
@@ -1744,7 +2101,7 @@
                     const targetElev = getArchitecturalFloorElevation(playerFootPos.x, playerFootPos.z, playerFootPos.y);
                     playerFootPos.y += (targetElev - playerFootPos.y) * Math.min(1.0, dt * 10.0);
 
-                    const bob = isMoving ? Math.sin(elapsed * 9.5) * 0.04 : 0.0;
+                    const bob = isMoving ? Math.sin(elapsed * 7.5) * 0.028 : 0.0;
                     camera.position.set(playerFootPos.x, playerFootPos.y + PLAYER_EYE_HEIGHT + bob, playerFootPos.z);
                 }
 
