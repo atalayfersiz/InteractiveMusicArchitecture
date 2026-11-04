@@ -9,9 +9,15 @@ Strictly filters out:
   - Hidden objects (attr.Visible == False)
   - Objects on hidden layers or parent layers (layer.Visible == False)
   - Reference drawing layers (00_REFERENCE_DRAWINGS)
-And exports the exact 3D triangulated surface meshes + Brep wireframe edges
+And exports the exact right-handed 3D triangulated surface meshes + Brep wireframe edges
 of all visible architectural elements to:
     D:/CODING/InteractiveMusicArchitecture/web_prototype/jsg_model_data.js
+
+Coordinate Mapping (Right-Handed Rhino Z-up -> Right-Handed Three.js Y-up):
+  Three.js x = +Rhino X / 100.0  (South Stair = 103.3m -> North Tip = 0.0m)
+  Three.js y = +Rhino Z / 100.0  (Elevation Up: 0.0m -> +5.93m Upper Floor)
+  Three.js z = -Rhino Y / 100.0  (West Colonnade = Left side when climbing stairs,
+                                  East Foyer Wall = Right side when climbing stairs)
 """
 
 import json
@@ -26,15 +32,10 @@ def classify_musical_voice(name: str, layer_path: str) -> str:
     n = name or ""
     lp = layer_path or ""
 
-    # 1. Grand Exterior Entrance Staircase
     if "Stair_GrandExterior" in n or "GrandStair_CheekWall" in n:
         return "EXT_STAIR"
-
-    # 2. Exterior Columns (Colonnade, Portico, Pergamon Link)
     if "SM_Meso_Column_" in n or "02_Meso_Columns" in lp or "Colonnade" in lp:
         return "EXT_COLUMNS"
-
-    # 3. Entrance Glass Facade (South Upper Entrance & Vestibule & Windbreak)
     if (
         "SouthUpperEntrance" in n
         or "VestibuleInner" in n
@@ -42,32 +43,22 @@ def classify_musical_voice(name: str, layer_path: str) -> str:
         or "TerracePavilion" in n
     ):
         return "ENTRANCE_GLASS"
-
-    # 7. Skylight Glass Roof & Coffer Fins over Interior Stair
     if (
         "InteriorStairSkylight" in n
         or "SkylightCofferFin" in n
         or "StairwellRoof_CofferSlab" in n
     ):
         return "SKYLIGHT_ROOF"
-
-    # 6. Interior Descending Staircase & its Balustrade
     if "Stair_InteriorMain" in n or "StairEastWalkway_Balustrade" in n:
         return "INT_STAIR_DOWN"
-
-    # 5. Foyer Facade Frames (Mullions & Transoms)
     if (
         "SM_Meso_Mullion_" in n
         or "SM_Meso_Transom_" in n
         or "FacadeFrames" in lp
     ):
         return "FOYER_FRAMES"
-
-    # 3b. Foyer Glass Panes (also carry the Glass Facade voice when looked at, and are pass-through)
     if "SM_Micro_Glass_" in n or "FacadeGlazing" in lp:
         return "ENTRANCE_GLASS"
-
-    # 4. Closed Foyer Mass (Walls, Cores, Roof & Floor Slabs of the Upper Level)
     if (
         "Foyer" in n
         or "Core" in n
@@ -76,7 +67,6 @@ def classify_musical_voice(name: str, layer_path: str) -> str:
         or "Ceiling_Coffer_MainFoyer" in n
     ):
         return "FOYER_VOID"
-
     return "CONTEXT_MASS"
 
 
@@ -92,7 +82,8 @@ def is_pass_through(name: str, layer_path: str) -> bool:
 
 def extract_brep_mesh_and_edges(geom):
     """
-    Extracts exact Three.js coordinates (x = rx/100, y = rz/100, z = ry/100)
+    Extracts exact right-handed Three.js coordinates:
+      (x = +rx/100, y = +rz/100, z = -ry/100)
     from Rhino Brep render meshes and Brep edges.
     """
     verts = []
@@ -107,11 +98,10 @@ def extract_brep_mesh_and_edges(geom):
                 continue
             for v_i in range(len(msh.Vertices)):
                 pt = msh.Vertices[v_i]
-                # Map Rhino (X_cm, Y_cm, Z_cm) -> Three.js meters (x=X, y=Z_up, z=Y)
                 verts.extend([
                     round(pt.X / 100.0, 3),
                     round(pt.Z / 100.0, 3),
-                    round(pt.Y / 100.0, 3),
+                    round(-pt.Y / 100.0, 3),
                 ])
             for fc_i in range(len(msh.Faces)):
                 fc = msh.Faces[fc_i]
@@ -128,10 +118,10 @@ def extract_brep_mesh_and_edges(geom):
             edges.extend([
                 round(p0.X / 100.0, 3),
                 round(p0.Z / 100.0, 3),
-                round(p0.Y / 100.0, 3),
+                round(-p0.Y / 100.0, 3),
                 round(p1.X / 100.0, 3),
                 round(p1.Z / 100.0, 3),
-                round(p1.Y / 100.0, 3),
+                round(-p1.Y / 100.0, 3),
             ])
 
     return verts, faces, edges
@@ -143,7 +133,6 @@ def main():
     if not model:
         raise RuntimeError(f"Failed to read {RHINO_PATH}")
 
-    # Build layer dictionary and check parent visibility
     layers_by_id = {}
     layers_by_index = {}
     for i in range(len(model.Layers)):
@@ -162,9 +151,6 @@ def main():
 
     exported_objects = []
     voice_counts = {}
-    skipped_hidden_obj = 0
-    skipped_hidden_layer = 0
-    skipped_ref = 0
 
     for i in range(len(model.Objects)):
         obj = model.Objects[i]
@@ -173,29 +159,21 @@ def main():
         ly = layers_by_index.get(attr.LayerIndex)
         lp = ly.FullPath if ly else "Default"
 
-        # 1. Skip reference drawings layer
         if lp.startswith("00_REFERENCE"):
-            skipped_ref += 1
             continue
-
-        # 2. Skip objects on hidden layers
         if ly and not is_layer_effectively_visible(ly):
-            skipped_hidden_layer += 1
             continue
-
-        # 3. Skip objects explicitly hidden by the user in Rhino (Hide command)
         if not attr.Visible:
-            skipped_hidden_obj += 1
             continue
 
         bb = geom.GetBoundingBox()
-        # Bounding box in Three.js meters (x = rx, y = rz, z = ry)
+        # Note: because Three.js z = -Rhino Y, min_z comes from -bb.Max.Y and max_z comes from -bb.Min.Y!
         min_x = round(bb.Min.X / 100.0, 3)
         min_y = round(bb.Min.Z / 100.0, 3)
-        min_z = round(bb.Min.Y / 100.0, 3)
+        min_z = round(-bb.Max.Y / 100.0, 3)
         max_x = round(bb.Max.X / 100.0, 3)
         max_y = round(bb.Max.Z / 100.0, 3)
-        max_z = round(bb.Max.Y / 100.0, 3)
+        max_z = round(-bb.Min.Y / 100.0, 3)
 
         verts, faces, edges = extract_brep_mesh_and_edges(geom)
         if not verts or not faces:
@@ -229,18 +207,12 @@ def main():
 
     os.makedirs(os.path.dirname(OUT_JS_PATH), exist_ok=True)
     with open(OUT_JS_PATH, "w", encoding="utf-8") as f:
-        f.write("// Auto-generated exact 3D geometry from D:\\CODING\\Thesis\\InteractiveMusicArchitecture_Master.3dm\n")
+        f.write("// Auto-generated exact right-handed 3D geometry from D:\\CODING\\Thesis\\InteractiveMusicArchitecture_Master.3dm\n")
         f.write("window.JSG_MODEL_DATA = ")
         json.dump(payload, f, separators=(",", ":"))
         f.write(";\n")
 
-    size_kb = os.path.getsize(OUT_JS_PATH) / 1024.0
-    print(
-        f"Exported {len(exported_objects)} visible 3D mesh objects "
-        f"(skipped {skipped_hidden_obj} hidden objects, {skipped_hidden_layer} hidden-layer objects, {skipped_ref} ref planes) "
-        f"-> {OUT_JS_PATH} ({size_kb:.1f} KB)"
-    )
-    print("Voice breakdown:", json.dumps(voice_counts, indent=2))
+    print(f"Exported {len(exported_objects)} mirrored right-handed 3D objects -> {OUT_JS_PATH}")
 
 
 if __name__ == "__main__":

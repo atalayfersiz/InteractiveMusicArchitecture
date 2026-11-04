@@ -8,13 +8,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap');
 
         :root {
-            --bg: #07080b;
+            --bg: #050609;
             --pill-bg: rgba(10, 12, 18, 0.58);
             --pill-border: rgba(255, 255, 255, 0.11);
             --accent: #e5c378;
             --blue-wave: #4ea8ff;
             --text: rgba(255, 255, 255, 0.90);
-            --muted: rgba(255, 255, 255, 0.42);
+            --muted: rgba(255, 255, 255, 0.44);
         }
 
         * {
@@ -40,13 +40,12 @@
             z-index: 1;
         }
 
-        /* Subtle interior atmosphere shift when inside the closed Foyer mass */
         #vignette {
             position: fixed;
             inset: 0;
             pointer-events: none;
             z-index: 2;
-            background: radial-gradient(circle at center, transparent 62%, rgba(4, 6, 12, 0.68) 100%);
+            background: radial-gradient(circle at center, transparent 62%, rgba(3, 5, 10, 0.68) 100%);
             transition: background 1.2s ease;
         }
         #vignette.inside-void {
@@ -57,7 +56,7 @@
         #overlay {
             position: fixed;
             inset: 0;
-            background: rgba(6, 7, 11, 0.92);
+            background: rgba(5, 6, 9, 0.92);
             backdrop-filter: blur(20px);
             z-index: 100;
             display: flex;
@@ -109,7 +108,7 @@
         }
         .btn-minimal:hover {
             background: #fff;
-            color: #07080b;
+            color: #050609;
             border-color: #fff;
         }
         .btn-minimal.secondary {
@@ -118,7 +117,7 @@
         }
         .btn-minimal.secondary:hover {
             background: var(--blue-wave);
-            color: #07080b;
+            color: #050609;
         }
 
         /* Ultra-Minimalist HUD */
@@ -199,7 +198,7 @@
             box-shadow: 0 0 8px var(--blue-wave);
         }
 
-        /* Center Magnetic Focus Reticle (Larger Aperture for Thin Elements) */
+        /* Center Magnetic Focus Reticle */
         #reticle {
             position: absolute;
             top: 50%;
@@ -316,7 +315,7 @@
     <!-- Minimalist Start Screen -->
     <div id="overlay">
         <div class="start-title">JAMES-SIMON-GALERIE</div>
-        <div class="start-sub">Audio-Spatial Path · 3D Interactive Architecture</div>
+        <div class="start-sub">Audio-Spatial Path · 3D Point-Cloud &amp; Architectural Synth</div>
         <div class="start-buttons">
             <button class="btn-minimal" id="btn-start-free">Walk Freely</button>
             <button class="btn-minimal secondary" id="btn-start-guided">Auto-Walk Spatial Path</button>
@@ -331,8 +330,7 @@
             <button class="pill-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Elements to Play & Loop [M]">User Activates</button>
             <div class="pill-divider"></div>
             <button class="pill-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Spatial Path [R]">Route [R]</button>
-            <button class="pill-btn" id="btn-sound-src" onclick="toggleVideoSoundtrack()" title="Toggle Original Video Soundtrack Layer [T]">Track: Hybrid [T]</button>
-            <button class="pill-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: Shaded [V]</button>
+            <button class="pill-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: LiDAR Point Cloud [V]</button>
         </div>
 
         <!-- Top-Right Zone Readout -->
@@ -378,7 +376,7 @@
                 </div>
             </div>
             <div class="pill-divider"></div>
-            <div class="hint-text">WASD Walk · Mouse Look · [1-6] Waypoints</div>
+            <div class="hint-text">WASD Walk · Mouse Look · [V] View · [1-6] Waypoints</div>
         </div>
     </div>
 
@@ -386,56 +384,52 @@
         // ============================================================================
         // 1. ARCHITECTURAL VOICE CONFIGURATION & MAGNETIC SELECTION INFLATION
         // ============================================================================
-        // Notice `selectionPad`: expands the invisible raycast proxy around thin frames,
-        // slender columns, skylight fins, and stair steps so they are effortless to catch from afar!
         const VOICE_CONFIG = {
             EXT_STAIR: {
                 label: "Exterior Stairs · Deep Electronic Pulse",
-                colorHex: 0xc8b08a,
+                colorHex: 0xd8c39e,
                 maxDist: 45.0,
                 selectionPad: [0.35, 0.35, 0.35]
             },
             EXT_COLUMNS: {
                 label: "Terrace Columns · Warm Synth Arpeggio",
-                colorHex: 0xe5c378,
+                colorHex: 0xf0cf85,
                 maxDist: 65.0,
-                // Columns are 0.28m slender piers -> inflate selection boundary by +1.15m horizontally!
                 selectionPad: [1.15, 0.40, 1.15]
             },
             ENTRANCE_GLASS: {
                 label: "Entrance Glass Facade · Lush C-Minor9 Pad",
-                colorHex: 0x78dce8,
+                colorHex: 0x72efdd,
                 maxDist: 50.0,
                 selectionPad: [0.60, 0.40, 0.60]
             },
             FOYER_VOID: {
                 label: "Closed Foyer Mass · Deep Architectural Void",
-                colorHex: 0x9d8ec4,
+                colorHex: 0xb8b2d8,
                 maxDist: 50.0,
                 selectionPad: [0.10, 0.10, 0.10]
             },
             FOYER_FRAMES: {
                 label: "Facade Frames · Warm Plucked Synth Rhythm",
-                colorHex: 0xd99b72,
+                colorHex: 0xf4a261,
                 maxDist: 48.0,
-                // Mullions & Transoms are 0.08m thin -> inflate selection boundary by +0.95m so gaze catches them easily!
                 selectionPad: [0.95, 0.55, 0.95]
             },
             INT_STAIR_DOWN: {
                 label: "Interior Descending Stair · Cascading Analog Scale",
-                colorHex: 0x7bdff2,
+                colorHex: 0x64dfdf,
                 maxDist: 45.0,
                 selectionPad: [0.55, 0.55, 0.55]
             },
             SKYLIGHT_ROOF: {
                 label: "Skylight Glass Roof & Fins · High Shimmer Chord",
-                colorHex: 0x90e0ef,
+                colorHex: 0x80ffdb,
                 maxDist: 48.0,
                 selectionPad: [0.85, 0.75, 0.85]
             },
             CONTEXT_MASS: {
                 label: "Architectural Plinth & Mass",
-                colorHex: 0x828996,
+                colorHex: 0x6c7a89,
                 maxDist: 38.0,
                 selectionPad: [0.0, 0.0, 0.0]
             }
@@ -452,36 +446,38 @@
         ];
 
         // ============================================================================
-        // 2. WAYPOINTS & GUIDED ROUTE (MATCHING INSTAGRAM VIDEO PATH)
+        // 2. WAYPOINTS & GUIDED ROUTE (RIGHT-HANDED MIRRORED COORDINATES: z = -ry)
+        //    Climbing from X = 105m -> X = 26m facing -X:
+        //    LEFT side  = West Colonnade Terrace (z = -7.4m .. 0.0m)
+        //    RIGHT side = East Foyer Wall & East Gallery Walkway (z = -20.89m .. -14.0m)
         // ============================================================================
         const WAYPOINTS = [
-            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: 14.0 }, lookAt: { x: 86.0, y: 6.5,  z: 14.0 } },
-            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: 13.8 }, lookAt: { x: 78.0, y: 9.0,  z: 3.8  } },
-            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: 16.5 }, lookAt: { x: 74.2, y: 8.8,  z: 16.8 } },
-            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: 15.2 }, lookAt: { x: 48.0, y: 8.5,  z: 14.2 } },
-            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: 15.0 }, lookAt: { x: 52.0, y: 8.2,  z: 20.5 } },
-            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: 18.4 }, lookAt: { x: 35.0, y: 3.5,  z: 14.8 } }
+            { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: -14.0 }, lookAt: { x: 86.0, y: 6.5,  z: -14.0 } },
+            { zone: "CLIMBING EXTERIOR STAIRS", pos: { x: 94.5,  y: 2.98, z: -13.8 }, lookAt: { x: 78.0, y: 9.0,  z: -3.8  } },
+            { zone: "UPPER ENTRANCE TERRACE",   pos: { x: 80.5,  y: 5.93, z: -16.5 }, lookAt: { x: 74.2, y: 8.8,  z: -16.8 } },
+            { zone: "CLOSED FOYER VOID",        pos: { x: 63.5,  y: 5.93, z: -15.2 }, lookAt: { x: 48.0, y: 8.5,  z: -14.2 } },
+            { zone: "FOYER FACADE FRAMES",      pos: { x: 54.0,  y: 5.93, z: -15.0 }, lookAt: { x: 52.0, y: 8.2,  z: -20.5 } },
+            { zone: "DESCENDING STAIR & ROOF",  pos: { x: 42.5,  y: 5.93, z: -18.4 }, lookAt: { x: 35.0, y: 3.5,  z: -14.8 } }
         ];
 
         const AUTO_ROUTE_KEYFRAMES = [
-            { t: 0,  pos: [105.0, 0.00, 14.0], look: [88.0, 5.5, 14.0] },
-            { t: 7,  pos: [96.5,  2.28, 13.8], look: [82.0, 8.8, 3.8]  },
-            { t: 14, pos: [88.5,  5.30, 14.8], look: [75.0, 9.0, 4.2]  },
-            { t: 20, pos: [82.5,  5.93, 16.5], look: [74.2, 8.8, 16.8] },
-            { t: 27, pos: [74.8,  5.93, 16.8], look: [68.8, 8.5, 16.8] },
-            { t: 33, pos: [64.0,  5.93, 15.4], look: [48.0, 8.2, 13.8] },
-            { t: 40, pos: [54.5,  5.93, 15.2], look: [52.5, 8.2, 20.5] },
-            { t: 46, pos: [45.0,  5.93, 18.3], look: [35.5, 2.8, 14.8] },
-            { t: 52, pos: [36.5,  5.93, 18.3], look: [35.0, 14.1, 14.7] },
-            { t: 58, pos: [29.0,  5.93, 18.3], look: [38.0, 3.0, 14.8] }
+            { t: 0,  pos: [105.0, 0.00, -14.0], look: [88.0, 5.5, -14.0] },
+            { t: 7,  pos: [96.5,  2.28, -13.8], look: [82.0, 8.8, -3.8]  },
+            { t: 14, pos: [88.5,  5.30, -14.8], look: [75.0, 9.0, -4.2]  },
+            { t: 20, pos: [82.5,  5.93, -16.5], look: [74.2, 8.8, -16.8] },
+            { t: 27, pos: [74.8,  5.93, -16.8], look: [68.8, 8.5, -16.8] },
+            { t: 33, pos: [64.0,  5.93, -15.4], look: [48.0, 8.2, -13.8] },
+            { t: 40, pos: [54.5,  5.93, -15.2], look: [52.5, 8.2, -20.5] },
+            { t: 46, pos: [45.0,  5.93, -18.3], look: [35.5, 2.8, -14.8] },
+            { t: 52, pos: [36.5,  5.93, -18.3], look: [35.0, 14.1, -14.7] },
+            { t: 58, pos: [29.0,  5.93, -18.3], look: [38.0, 3.0, -14.8] }
         ];
 
         // ============================================================================
         // 3. STATE
         // ============================================================================
         let interactionMode = 'AUTONOMOUS';
-        let visualStyle = 'ARCHITECTURAL';
-        let soundtrackMode = 'HYBRID'; // 'HYBRID' (Video Track + Gaze Synth) or 'SYNTH_ONLY'
+        let visualStyle = 'LIDAR'; // Default directly to the structured 3D LiDAR Point Cloud!
         let isRunning = false;
         let isPointerLocked = false;
         let autoRouteActive = false;
@@ -489,8 +485,7 @@
 
         let mouseNDC = new THREE.Vector2(0, 0);
         let currentGazeHit = null;
-        let lastGazeVoice = null;
-        let gazeHoldTimer = 0; // Smooth hysteresis so thin elements don't flicker when panning across them
+        let gazeHoldTimer = 0;
         let isInsideClosedMass = false;
         let isOnExteriorStair = false;
         let isMoving = false;
@@ -502,9 +497,8 @@
         const voiceTargetLevels = { ...voiceLevels };
 
         // ============================================================================
-        // 4. HARMONIC WEB AUDIO ENGINE + INSTAGRAM VIDEO SOUNDTRACK SYNC
-        //    (Tuned strictly to C Minor / Eb Major Pentatonic like the Instagram Video
-        //     with Single-Dominant Gaze Ducking so voices NEVER clash!)
+        // 4. PURE WEB AUDIO SYNTHESIS ENGINE (INSPIRED BY YOUR INSTAGRAM VIDEO TIMBRES,
+        //    NO MP4 BACKGROUND AUDIO TRACK!)
         // ============================================================================
         let audioCtx = null;
         let masterGain = null;
@@ -514,30 +508,20 @@
         let delayNode = null;
         let delaySendGain = null;
 
-        // Reference Video Audio Element (from https://www.instagram.com/p/DclVEKMxCo1/)
-        let refMediaEl = null;
-        let refMediaFilter = null;
-        let refMediaGain = null;
-
         const continuousNodes = {};
 
-        // 120 BPM (matches the deep electronic four-on-the-floor pulse in your Instagram video)
         const BPM = 120;
-        const STEP_TIME_MS = ((60 / BPM) / 4) * 1000; // 125ms per 16th note
+        const STEP_TIME_MS = ((60 / BPM) / 4) * 1000;
         let currentStep = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
 
         function initAudioEngine() {
             if (audioCtx) {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
-                if (refMediaEl && refMediaEl.paused && soundtrackMode === 'HYBRID') {
-                    refMediaEl.play().catch(() => {});
-                }
                 return;
             }
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-            // Soft Studio Bus Compressor / Limiter so multiple layers always blend silkily
             compressor = audioCtx.createDynamicsCompressor();
             compressor.threshold.setValueAtTime(-16, audioCtx.currentTime);
             compressor.knee.setValueAtTime(14, audioCtx.currentTime);
@@ -546,9 +530,8 @@
             compressor.release.setValueAtTime(0.22, audioCtx.currentTime);
 
             masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.78;
+            masterGain.gain.value = 0.80;
 
-            // Lush Stereo Reverb (3.4s warm decay)
             reverbNode = audioCtx.createConvolver();
             const revLen = Math.floor(audioCtx.sampleRate * 3.4);
             const impulse = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
@@ -563,7 +546,6 @@
             reverbSendGain = audioCtx.createGain();
             reverbSendGain.gain.value = 0.42;
 
-            // Dotted-8th Warm Tape Delay (0.375s at 120 BPM)
             delayNode = audioCtx.createDelay(1.0);
             delayNode.delayTime.value = 0.375;
             const delayFeedback = audioCtx.createGain();
@@ -586,56 +568,13 @@
             compressor.connect(audioCtx.destination);
 
             setupContinuousVoices();
-            setupReferenceVideoTrack();
             startSequencerLoop();
         }
 
-        function setupReferenceVideoTrack() {
-            try {
-                refMediaEl = document.createElement('video');
-                refMediaEl.src = 'audio/jsg_reference_track.mp4';
-                refMediaEl.loop = true;
-                refMediaEl.muted = false;
-                refMediaEl.playsInline = true;
-                refMediaEl.crossOrigin = 'anonymous';
-                refMediaEl.style.display = 'none';
-                document.body.appendChild(refMediaEl);
-
-                const srcNode = audioCtx.createMediaElementSource(refMediaEl);
-                refMediaFilter = audioCtx.createBiquadFilter();
-                refMediaFilter.type = 'lowpass';
-                refMediaFilter.frequency.value = 1800;
-
-                refMediaGain = audioCtx.createGain();
-                refMediaGain.gain.value = 0.32;
-
-                srcNode.connect(refMediaFilter);
-                refMediaFilter.connect(refMediaGain);
-                refMediaGain.connect(masterGain);
-
-                refMediaEl.play().catch(() => {});
-            } catch (err) {
-                console.warn("Reference track fallback to pure synth:", err);
-            }
-        }
-
-        function toggleVideoSoundtrack() {
-            soundtrackMode = soundtrackMode === 'HYBRID' ? 'SYNTH_ONLY' : 'HYBRID';
-            const btn = document.getElementById('btn-sound-src');
-            if (soundtrackMode === 'HYBRID') {
-                btn.innerText = "Track: Hybrid [T]";
-                if (refMediaEl && refMediaEl.paused) refMediaEl.play().catch(() => {});
-            } else {
-                btn.innerText = "Track: Pure Synth [T]";
-            }
-        }
-
-        // All continuous & rhythmic voices share the exact C Minor 9 / Eb Major 7 harmonic field:
-        // Notes: C, D, Eb, F, G, Bb (zero dissonance regardless of combination!)
         function setupContinuousVoices() {
             const now = audioCtx.currentTime;
 
-            // 1. CLOSED FOYER VOID ATMOSPHERE (Warm C2 + G2 + Eb3 + G3 + D4 deep analog pad)
+            // 1. CLOSED FOYER VOID ATMOSPHERE (Warm C2 + G2 + Eb3 + G3 + D4 deep analog room resonance)
             const voidGain = audioCtx.createGain();
             voidGain.gain.value = 0.0001;
             const voidFilter = audioCtx.createBiquadFilter();
@@ -714,13 +653,11 @@
             for (const key of ACTIVE_VOICE_KEYS) {
                 const target = voiceTargetLevels[key] || 0;
                 const curr = voiceLevels[key] || 0;
-                // Smooth, musical envelope: gentle attack and silky release
                 const speed = target > curr ? 4.2 : 2.4;
                 voiceLevels[key] = curr + (target - curr) * Math.min(1, dt * speed);
                 if (voiceLevels[key] < 0.002 && target === 0) voiceLevels[key] = 0;
             }
 
-            // Automatically duck the Foyer Void drone slightly when a Gaze voice is active so they never muddy!
             const activeGazeMax = Math.max(
                 voiceLevels.EXT_COLUMNS,
                 voiceLevels.ENTRANCE_GLASS,
@@ -732,55 +669,38 @@
 
             if (continuousNodes.FOYER_VOID) {
                 const lvl = voiceLevels.FOYER_VOID * voidDuck;
-                continuousNodes.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.50, now, 0.12);
+                continuousNodes.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.52, now, 0.12);
                 continuousNodes.FOYER_VOID.filter.frequency.setTargetAtTime(180 + lvl * 420, now, 0.15);
                 reverbSendGain.gain.setTargetAtTime(0.35 + voiceLevels.FOYER_VOID * 0.40, now, 0.18);
             }
 
             if (continuousNodes.ENTRANCE_GLASS) {
                 const lvl = voiceLevels.ENTRANCE_GLASS;
-                continuousNodes.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.42, now, 0.08);
+                continuousNodes.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.44, now, 0.08);
                 continuousNodes.ENTRANCE_GLASS.filter.frequency.setTargetAtTime(420 + lvl * 1450, now, 0.10);
             }
 
             if (continuousNodes.SKYLIGHT_ROOF) {
                 const lvl = voiceLevels.SKYLIGHT_ROOF;
-                continuousNodes.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.38, now, 0.08);
+                continuousNodes.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.40, now, 0.08);
                 continuousNodes.SKYLIGHT_ROOF.filter.frequency.setTargetAtTime(500 + lvl * 1800, now, 0.10);
-            }
-
-            // Modulate the Original Instagram Video Soundtrack filter & gain by player location + gaze!
-            if (refMediaGain && refMediaFilter) {
-                if (soundtrackMode === 'HYBRID') {
-                    const baseTrackVol = isMoving ? 0.38 : 0.24;
-                    const gazeBoost = activeGazeMax * 0.18;
-                    refMediaGain.gain.setTargetAtTime(baseTrackVol + gazeBoost, now, 0.15);
-                    // Inside the Closed Foyer Void: warm deep lowpass (680Hz), opening up as you gaze at glass/frames/skylight
-                    const baseCutoff = isInsideClosedMass ? 750 : 1650;
-                    refMediaFilter.frequency.setTargetAtTime(baseCutoff + activeGazeMax * 2800, now, 0.15);
-                } else {
-                    refMediaGain.gain.setTargetAtTime(0.0001, now, 0.10);
-                }
             }
         }
 
-        // Soft, warm electronic voices inspired directly by the Instagram video (C Minor 9 palette)
         function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
             if (!audioCtx || intensity <= 0.02) return;
             const now = audioCtx.currentTime;
 
             if (voiceKey === 'EXT_STAIR') {
-                // 1. EXTERIOR STAIRS: Warm deep electronic kick/bass pulse + C-minor bassline (like 0:02-0:10 in video)
                 const isKickStep = (stepIndex % 4 === 0);
                 if (isKickStep) {
-                    // Warm deep electronic kick drum
                     const kickOsc = audioCtx.createOscillator();
                     const kickEnv = audioCtx.createGain();
                     kickOsc.type = 'sine';
                     kickOsc.frequency.setValueAtTime(118.0, now);
                     kickOsc.frequency.exponentialRampToValueAtTime(42.0, now + 0.11);
 
-                    const kPeak = Math.min(0.38, intensity * 0.34);
+                    const kPeak = Math.min(0.40, intensity * 0.36);
                     kickEnv.gain.setValueAtTime(0.001, now);
                     kickEnv.gain.linearRampToValueAtTime(kPeak, now + 0.006);
                     kickEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
@@ -790,7 +710,6 @@
                     kickOsc.start(now);
                     kickOsc.stop(now + 0.25);
                 } else if (stepIndex % 2 === 0) {
-                    // Warm off-beat deep bass synth (C2, Eb2, F2, G2)
                     const bassNotes = [65.41, 77.78, 87.31, 98.00];
                     const freq = bassNotes[Math.floor(stepIndex / 4) % bassNotes.length];
                     const osc = audioCtx.createOscillator();
@@ -803,7 +722,7 @@
                     filter.frequency.setValueAtTime(180 + intensity * 320, now);
                     filter.frequency.exponentialRampToValueAtTime(95, now + 0.20);
 
-                    const peak = Math.min(0.26, intensity * 0.22);
+                    const peak = Math.min(0.28, intensity * 0.24);
                     env.gain.setValueAtTime(0.001, now);
                     env.gain.linearRampToValueAtTime(peak, now + 0.015);
                     env.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
@@ -816,7 +735,6 @@
                 }
             }
             else if (voiceKey === 'EXT_COLUMNS') {
-                // 2. EXTERIOR COLUMNS: Warm muted analog synth arpeggio in C Minor 9 (C4, Eb4, G4, Bb4, D5)
                 const colArp = [261.63, 311.13, 392.00, 466.16, 587.33, 466.16, 392.00, 311.13];
                 const freq = colArp[stepIndex % colArp.length];
 
@@ -831,7 +749,7 @@
                 filter.frequency.setValueAtTime(450 + intensity * 1200, now);
                 filter.frequency.exponentialRampToValueAtTime(280, now + 0.20);
 
-                const peak = Math.min(0.28, intensity * 0.24);
+                const peak = Math.min(0.30, intensity * 0.26);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.012);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.24);
@@ -846,7 +764,6 @@
                 osc.stop(now + 0.25);
             }
             else if (voiceKey === 'ENTRANCE_GLASS') {
-                // 3. ENTRANCE GLASS: Soft Rhodes/Glass harmonic bell note (Eb5, F5, G5, Bb5)
                 const glassNotes = [622.25, 698.46, 783.99, 932.33];
                 const freq = glassNotes[Math.floor(stepIndex / 4) % glassNotes.length];
 
@@ -855,7 +772,7 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
-                const peak = Math.min(0.18, intensity * 0.16);
+                const peak = Math.min(0.20, intensity * 0.18);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.04);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.65);
@@ -869,13 +786,12 @@
                 osc.stop(now + 0.66);
             }
             else if (voiceKey === 'FOYER_VOID') {
-                // 4. CLOSED FOYER VOID: Deep warm C2 sub-swell on downbeats
                 const osc = audioCtx.createOscillator();
                 const env = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(65.41, now); // C2
+                osc.frequency.setValueAtTime(65.41, now);
 
-                const peak = Math.min(0.28, intensity * 0.24);
+                const peak = Math.min(0.30, intensity * 0.26);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.12);
                 env.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
@@ -887,8 +803,7 @@
                 osc.stop(now + 0.96);
             }
             else if (voiceKey === 'FOYER_FRAMES') {
-                // 5. FOYER FACADE FRAMES: Warm filtered plucked synth chord pulse (like 0:15-0:26 in video)
-                const frameNotes = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25]; // C4, Eb4, F4, G4, Bb4, C5
+                const frameNotes = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25];
                 const freq = frameNotes[stepIndex % frameNotes.length];
 
                 const osc1 = audioCtx.createOscillator();
@@ -905,7 +820,7 @@
                 filter.frequency.setValueAtTime(380 + intensity * 1350, now);
                 filter.frequency.exponentialRampToValueAtTime(220, now + 0.18);
 
-                const peak = Math.min(0.24, intensity * 0.20);
+                const peak = Math.min(0.26, intensity * 0.22);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.010);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.20);
@@ -923,20 +838,9 @@
                 osc2.stop(now + 0.21);
             }
             else if (voiceKey === 'INT_STAIR_DOWN') {
-                // 6. INTERIOR DESCENDING STAIRCASE: Smooth cascading C-Minor Pentatonic downward glide
                 const descendingScale = [
-                    783.99, // G5 (Top of Interior Stair)
-                    698.46, // F5
-                    622.25, // Eb5
-                    523.25, // C5
-                    466.16, // Bb4
-                    392.00, // G4
-                    349.23, // F4
-                    311.13, // Eb4
-                    261.63, // C4
-                    233.08, // Bb3
-                    196.00, // G3
-                    155.56  // Eb3 (Bottom of Interior Stair)
+                    783.99, 698.46, 622.25, 523.25, 466.16, 392.00,
+                    349.23, 311.13, 261.63, 233.08, 196.00, 155.56
                 ];
                 const freq = descendingScale[stepIndex % descendingScale.length];
 
@@ -951,7 +855,7 @@
                 filter.frequency.setValueAtTime(420 + intensity * 1100, now);
                 filter.frequency.exponentialRampToValueAtTime(240, now + 0.26);
 
-                const peak = Math.min(0.28, intensity * 0.24);
+                const peak = Math.min(0.30, intensity * 0.26);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.015);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.28);
@@ -966,7 +870,6 @@
                 osc.stop(now + 0.29);
             }
             else if (voiceKey === 'SKYLIGHT_ROOF') {
-                // 7. SKYLIGHT GLASS ROOF: Ethereal soft high C-Minor9 harmonic shimmer (G5, Bb5, C6, D6)
                 const skyArp = [783.99, 932.33, 1046.50, 1174.66];
                 const freq = skyArp[Math.floor(stepIndex / 2) % skyArp.length];
 
@@ -975,7 +878,7 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
-                const peak = Math.min(0.16, intensity * 0.14);
+                const peak = Math.min(0.18, intensity * 0.16);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.03);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
@@ -995,15 +898,12 @@
                 if (!isRunning) return;
 
                 if (interactionMode === 'AUTONOMOUS') {
-                    // 1. Exterior Stairs Pulse (plays steady electronic pulse while on stairs or gazing at stairs)
                     if (voiceLevels.EXT_STAIR > 0.05) {
                         if (currentStep % 2 === 0) {
                             triggerVoiceStep('EXT_STAIR', currentStep, voiceLevels.EXT_STAIR);
                         }
                     }
 
-                    // 2. Single-Dominant Gaze Voice Scheduling:
-                    // Only the dominant gazed architectural voice triggers melodic notes, preventing any clutter!
                     const gazeCandidates = [
                         'EXT_COLUMNS',
                         'ENTRANCE_GLASS',
@@ -1034,7 +934,6 @@
                         if (currentStep % 4 === 2) triggerVoiceStep('SKYLIGHT_ROOF', currentStep, domLevel);
                     }
 
-                    // 3. Deep Foyer Void Heartbeat on bar start
                     if (voiceLevels.FOYER_VOID > 0.15 && currentStep === 0) {
                         triggerVoiceStep('FOYER_VOID', currentStep, voiceLevels.FOYER_VOID);
                     }
@@ -1053,12 +952,12 @@
         }
 
         // ============================================================================
-        // 5. THREE.JS SCENE — EXACT EDITED RHINO MESHES + ENLARGED SELECTION PROXIES
+        // 5. THREE.JS SCENE — HIGH-DENSITY STRUCTURED LIDAR POINT CLOUD + SHADED MESHES
         // ============================================================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x07080b);
-        scene.fog = new THREE.FogExp2(0x07080b, 0.0075);
+        scene.background = new THREE.Color(0x050609);
+        scene.fog = new THREE.FogExp2(0x050609, 0.0070);
 
         const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 260);
         camera.rotation.order = 'YXZ';
@@ -1072,25 +971,24 @@
         scene.add(ambientLight);
 
         const sunLight = new THREE.DirectionalLight(0xfff4e0, 0.95);
-        sunLight.position.set(130, 75, 45);
+        sunLight.position.set(130, 75, -45);
         scene.add(sunLight);
 
         const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.35);
-        fillLight.position.set(-60, 40, -30);
+        fillLight.position.set(-60, 40, 30);
         scene.add(fillLight);
 
         const foyerWarmLight = new THREE.PointLight(0xe5c378, 0.9, 45);
-        foyerWarmLight.position.set(58, 10.5, 14.5);
+        foyerWarmLight.position.set(58, 10.5, -14.5);
         scene.add(foyerWarmLight);
 
-        // Separate list of enlarged invisible selection proxy meshes so thin columns & mullions are easy to catch!
         const selectionProxyMeshes = [];
         const solidColliderBoxes = [];
         const voiceMeshesMap = {};
         const allShadedMeshes = [];
         const allWireLines = [];
+        const darkCoreMeshes = []; // Subtle dark depth-occluder shells in LiDAR mode so walls/floors read clearly!
         let lidarPointsSystem = null;
-        let glowingPathLine = null;
 
         const MAX_RIPPLES = 10;
         const rippleCenters = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector3(0, -999, 0));
@@ -1108,10 +1006,21 @@
             if (activeRipples.length > MAX_RIPPLES) activeRipples.shift();
         }
 
-        // Invisible material used for enlarged selection boundary proxies
         const proxyMaterial = new THREE.MeshBasicMaterial({
             visible: false,
             side: THREE.DoubleSide
+        });
+
+        // Subtle dark matte shell material for LiDAR mode so foreground rooms/stairs occlude distant background points
+        // (makes navigating inside the point cloud 10x clearer while keeping the pure point-cloud aesthetic!)
+        const darkOccluderMat = new THREE.MeshBasicMaterial({
+            color: 0x06080d,
+            transparent: true,
+            opacity: 0.72,
+            depthWrite: true,
+            polygonOffset: true,
+            polygonOffsetFactor: 2,
+            polygonOffsetUnits: 2
         });
 
         function buildRhinoScene() {
@@ -1156,14 +1065,21 @@
                     max: { x: obj.max[0], y: obj.max[1], z: obj.max[2] }
                 };
                 mesh.userData = meta;
+                mesh.visible = false; // Start in LiDAR Point Cloud mode by default
 
                 scene.add(mesh);
                 allShadedMeshes.push(mesh);
                 if (voiceMeshesMap[obj.voice]) voiceMeshesMap[obj.voice].push(mesh);
 
-                // ====================================================================
-                // ENLARGED SELECTION BOUNDARY PROXY FOR EASY GAZE / CURSOR INTERACTION
-                // ====================================================================
+                // Subtle dark depth-occluder shell for non-glass objects in LiDAR mode so you can clearly see walls, stairs & floors
+                if (!obj.passThrough && obj.voice !== 'ENTRANCE_GLASS' && obj.voice !== 'SKYLIGHT_ROOF') {
+                    const occMesh = new THREE.Mesh(geom, darkOccluderMat);
+                    occMesh.visible = true;
+                    scene.add(occMesh);
+                    darkCoreMeshes.push(occMesh);
+                }
+
+                // Enlarged Selection Proxy for easy gaze/cursor interaction on thin columns & mullions
                 const cfg = VOICE_CONFIG[obj.voice] || VOICE_CONFIG.CONTEXT_MASS;
                 const pad = cfg.selectionPad || [0, 0, 0];
                 const rawSx = Math.max(0.05, obj.max[0] - obj.min[0]);
@@ -1185,7 +1101,7 @@
                 scene.add(proxyMesh);
                 selectionProxyMeshes.push(proxyMesh);
 
-                // Exact Rhino Brep Wireframe Edges
+                // Wireframe Edges (only shown in Shaded / Hybrid mode, hidden in Pure LiDAR Point Cloud mode)
                 if (obj.e && obj.e.length > 0) {
                     const edgeGeom = new THREE.BufferGeometry();
                     edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(obj.e, 3));
@@ -1195,6 +1111,7 @@
                         opacity: 0.35
                     });
                     const wire = new THREE.LineSegments(edgeGeom, edgeMat);
+                    wire.visible = false;
                     scene.add(wire);
                     allWireLines.push(wire);
                 }
@@ -1213,55 +1130,105 @@
                     solidColliderBoxes.push(meta);
                 }
 
-                // LiDAR point cloud sampling
+                // ====================================================================
+                // HIGH-DENSITY STRUCTURED LIDAR POINT CLOUD GENERATION
+                // ====================================================================
                 const vCol = new THREE.Color(cfg.colorHex);
-                for (let k = 0; k < obj.v.length; k += 3) {
-                    lidarPositions.push(obj.v[k], obj.v[k + 1], obj.v[k + 2]);
-                    lidarColors.push(vCol.r, vCol.g, vCol.b);
+
+                // 1. Dense points along every architectural edge so stairs, columns, mullions & walls are razor-sharp!
+                if (obj.e && obj.e.length > 0) {
+                    const edgeSpacing = (obj.voice === 'EXT_STAIR' || obj.voice === 'INT_STAIR_DOWN' || obj.voice === 'FOYER_FRAMES' || obj.voice === 'EXT_COLUMNS')
+                        ? 0.14
+                        : 0.24;
+                    for (let eIdx = 0; eIdx < obj.e.length; eIdx += 6) {
+                        const x0 = obj.e[eIdx],     y0 = obj.e[eIdx + 1], z0 = obj.e[eIdx + 2];
+                        const x1 = obj.e[eIdx + 3], y1 = obj.e[eIdx + 4], z1 = obj.e[eIdx + 5];
+                        const segLen = Math.hypot(x1 - x0, y1 - y0, z1 - z0);
+                        const steps = Math.min(160, Math.max(2, Math.ceil(segLen / edgeSpacing)));
+                        for (let s = 0; s <= steps; s++) {
+                            const t = s / steps;
+                            lidarPositions.push(
+                                x0 + (x1 - x0) * t,
+                                y0 + (y1 - y0) * t,
+                                z0 + (z1 - z0) * t
+                            );
+                            // Edges slightly brighter for crisp architectural legibility when walking inside
+                            const b = 1.05 + Math.random() * 0.15;
+                            lidarColors.push(
+                                Math.min(1, vCol.r * b),
+                                Math.min(1, vCol.g * b),
+                                Math.min(1, vCol.b * b)
+                            );
+                        }
+                    }
                 }
-                const area = 2 * (rawSx * rawSy + rawSy * rawSz + rawSx * rawSz);
-                const numPts = Math.min(220, Math.max(8, Math.floor(area * 5.5)));
-                for (let p = 0; p < numPts; p++) {
-                    const face = Math.floor(Math.random() * 6);
-                    let px = obj.min[0] + Math.random() * rawSx;
-                    let py = obj.min[1] + Math.random() * rawSy;
-                    let pz = obj.min[2] + Math.random() * rawSz;
-                    if (face === 0) px = obj.min[0];
-                    else if (face === 1) px = obj.max[0];
-                    else if (face === 2) py = obj.min[1];
-                    else if (face === 3) py = obj.max[1];
-                    else if (face === 4) pz = obj.min[2];
-                    else pz = obj.max[2];
-                    lidarPositions.push(px, py, pz);
-                    lidarColors.push(vCol.r, vCol.g, vCol.b);
+
+                // 2. Surface scan points across every triangle face of the Rhino mesh
+                const surfaceDensity = obj.voice === 'CONTEXT_MASS' ? 4.0 : 12.0;
+                for (let fIdx = 0; fIdx < obj.f.length; fIdx += 3) {
+                    const i0 = obj.f[fIdx] * 3;
+                    const i1 = obj.f[fIdx + 1] * 3;
+                    const i2 = obj.f[fIdx + 2] * 3;
+
+                    const ax = obj.v[i0], ay = obj.v[i0 + 1], az = obj.v[i0 + 2];
+                    const bx = obj.v[i1], by = obj.v[i1 + 1], bz = obj.v[i1 + 2];
+                    const cxPt = obj.v[i2], cyPt = obj.v[i2 + 1], czPt = obj.v[i2 + 2];
+
+                    // Triangle area via cross product
+                    const ux = bx - ax, uy = by - ay, uz = bz - az;
+                    const vx = cxPt - ax, vy = cyPt - ay, vz = czPt - az;
+                    const crossX = uy * vz - uz * vy;
+                    const crossY = uz * vx - ux * vz;
+                    const crossZ = ux * vy - uy * vx;
+                    const triArea = 0.5 * Math.hypot(crossX, crossY, crossZ);
+
+                    const nSamples = Math.min(180, Math.floor(triArea * surfaceDensity));
+                    for (let s = 0; s < nSamples; s++) {
+                        let r1 = Math.random();
+                        let r2 = Math.random();
+                        if (r1 + r2 > 1.0) {
+                            r1 = 1.0 - r1;
+                            r2 = 1.0 - r2;
+                        }
+                        const r3 = 1.0 - r1 - r2;
+                        const px = ax * r1 + bx * r2 + cxPt * r3;
+                        const py = ay * r1 + by * r2 + cyPt * r3;
+                        const pz = az * r1 + bz * r2 + czPt * r3;
+
+                        lidarPositions.push(px, py, pz);
+                        // Subtle elevation shading so floor vs ceiling height is immediately readable
+                        const heightShade = 0.72 + 0.28 * Math.min(1.0, Math.max(0.0, (py + 2.0) / 16.0));
+                        const jitter = (0.82 + Math.random() * 0.22) * heightShade;
+                        lidarColors.push(vCol.r * jitter, vCol.g * jitter, vCol.b * jitter);
+                    }
                 }
             });
 
-            // Glowing Blue Spatial Path Line on the floor (inspired by the moving blue line in your Instagram video!)
+            // Glowing Blue Spatial Path Line on the floor (mirrored right-handed z = -ry)
             const pathCurve = new THREE.CatmullRomCurve3([
-                new THREE.Vector3(104.5, 0.08, 14.0),
-                new THREE.Vector3(95.0,  2.85, 14.2),
-                new THREE.Vector3(86.6,  5.98, 15.8),
-                new THREE.Vector3(74.2,  5.98, 16.8),
-                new THREE.Vector3(62.0,  5.98, 14.5),
-                new THREE.Vector3(53.0,  5.98, 16.2),
-                new THREE.Vector3(44.5,  5.98, 18.2),
-                new THREE.Vector3(30.0,  5.98, 18.2),
-                new THREE.Vector3(27.0,  5.98, 15.0),
-                new THREE.Vector3(38.0,  2.60, 14.8),
-                new THREE.Vector3(46.2,  0.08, 14.8)
+                new THREE.Vector3(104.5, 0.08, -14.0),
+                new THREE.Vector3(95.0,  2.85, -14.2),
+                new THREE.Vector3(86.6,  5.98, -15.8),
+                new THREE.Vector3(74.2,  5.98, -16.8),
+                new THREE.Vector3(62.0,  5.98, -14.5),
+                new THREE.Vector3(53.0,  5.98, -16.2),
+                new THREE.Vector3(44.5,  5.98, -18.2),
+                new THREE.Vector3(30.0,  5.98, -18.2),
+                new THREE.Vector3(27.0,  5.98, -15.0),
+                new THREE.Vector3(38.0,  2.60, -14.8),
+                new THREE.Vector3(46.2,  0.08, -14.8)
             ]);
             const pathPts = pathCurve.getPoints(180);
             const pathGeom = new THREE.BufferGeometry().setFromPoints(pathPts);
             const pathMat = new THREE.LineBasicMaterial({
                 color: 0x4ea8ff,
                 transparent: true,
-                opacity: 0.65
+                opacity: 0.70
             });
-            glowingPathLine = new THREE.Line(pathGeom, pathMat);
+            const glowingPathLine = new THREE.Line(pathGeom, pathMat);
             scene.add(glowingPathLine);
 
-            // LiDAR Shader
+            // LiDAR Point Cloud System (Normal Blending + Depth Testing so spatial depth is crystal-clear!)
             const ptGeom = new THREE.BufferGeometry();
             ptGeom.setAttribute('position', new THREE.Float32BufferAttribute(lidarPositions, 3));
             ptGeom.setAttribute('color', new THREE.Float32BufferAttribute(lidarColors, 3));
@@ -1295,10 +1262,10 @@
 
                         if (uGazeActive > 0.01) {
                             float dGaze = distance(pos, uGazePoint);
-                            if (dGaze < 6.0) {
-                                float gFactor = pow(1.0 - dGaze / 6.0, 2.0) * uGazeActive;
-                                finalColor = mix(finalColor, uGazeColor * 1.5, gFactor);
-                                extraSize += gFactor * 3.0;
+                            if (dGaze < 5.5) {
+                                float gFactor = pow(1.0 - dGaze / 5.5, 2.0) * uGazeActive;
+                                finalColor = mix(finalColor, uGazeColor * 1.45, gFactor);
+                                extraSize += gFactor * 2.6;
                             }
                         }
 
@@ -1307,19 +1274,20 @@
                             if (r > 0.0) {
                                 float dist = distance(pos, uRippleCenters[i]);
                                 float band = abs(dist - r);
-                                if (band < 1.6) {
-                                    float wave = (1.0 - band / 1.6) * max(0.0, 1.0 - r / 30.0);
-                                    finalColor = mix(finalColor, uRippleColors[i] * 1.8, wave);
-                                    extraSize += wave * 4.0;
+                                if (band < 1.5) {
+                                    float wave = (1.0 - band / 1.5) * max(0.0, 1.0 - r / 28.0);
+                                    finalColor = mix(finalColor, uRippleColors[i] * 1.65, wave);
+                                    extraSize += wave * 3.2;
                                 }
                             }
                         }
 
                         vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
                         gl_Position = projectionMatrix * mvPosition;
-                        gl_PointSize = clamp((16.0 + extraSize * 4.5) / -mvPosition.z, 1.2, 8.0);
+                        float distCam = max(1.0, -mvPosition.z);
+                        gl_PointSize = clamp((24.0 + extraSize * 5.0) / pow(distCam, 0.75), 1.8, 6.5);
                         vColor = finalColor;
-                        vAlpha = clamp(1.0 - (-mvPosition.z / 160.0), 0.15, 0.9);
+                        vAlpha = clamp(1.0 - (distCam / 145.0), 0.22, 0.96);
                     }
                 `,
                 fragmentShader: `
@@ -1328,26 +1296,28 @@
                     void main() {
                         float d = length(gl_PointCoord - vec2(0.5));
                         if (d > 0.5) discard;
-                        gl_FragColor = vec4(vColor, vAlpha * smoothstep(0.5, 0.1, d));
+                        float core = smoothstep(0.5, 0.12, d);
+                        gl_FragColor = vec4(vColor, vAlpha * core);
                     }
                 `,
                 transparent: true,
+                depthTest: true,
                 depthWrite: false,
-                blending: THREE.AdditiveBlending
+                blending: THREE.NormalBlending
             });
 
             lidarPointsSystem = new THREE.Points(ptGeom, ptMat);
-            lidarPointsSystem.visible = false;
+            lidarPointsSystem.visible = true; // Default to LiDAR Point Cloud mode!
             scene.add(lidarPointsSystem);
         }
 
         buildRhinoScene();
 
         // ============================================================================
-        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION & PASS-THROUGH GLASS
+        // 6. STAIR-AWARE FIRST-PERSON NAVIGATION (MIRRORED RIGHT-HANDED z = -ry)
         // ============================================================================
         const PLAYER_EYE_HEIGHT = 1.72;
-        let playerFootPos = new THREE.Vector3(104.8, 0.0, 14.0);
+        let playerFootPos = new THREE.Vector3(104.8, 0.0, -14.0);
         let cameraYaw = Math.PI * 0.5;
         let cameraPitch = 0.06;
         const moveKeys = { w: false, a: false, s: false, d: false };
@@ -1361,22 +1331,29 @@
 
         lookCameraAt(WAYPOINTS[0].lookAt.x, WAYPOINTS[0].lookAt.y, WAYPOINTS[0].lookAt.z);
 
-        function getArchitecturalFloorElevation(rx, rz, currentElev) {
-            if (rx >= 86.67 && rx <= 103.20 && rz >= 7.35 && rz <= 20.55) {
+        function getArchitecturalFloorElevation(rx, threeZ, currentElev) {
+            // Convert Three.js z back to positive Rhino Y (ry = -threeZ)
+            const ry = -threeZ;
+
+            // 1. Grand Exterior Staircase (rx: 86.67..103.20, ry: 7.35..20.55)
+            if (rx >= 86.67 && rx <= 103.20 && ry >= 7.35 && ry <= 20.55) {
                 const t = (103.111 - rx) / (103.111 - 86.667);
                 return Math.max(0, Math.min(1, t)) * 5.926;
             }
-            if (rx >= 26.07 && rx <= 46.37 && rz >= 13.18 && rz < 16.76) {
+            // 2. Interior Descending Staircase (rx: 26.07..46.37, ry: 13.18..16.76)
+            if (rx >= 26.07 && rx <= 46.37 && ry >= 13.18 && ry < 16.76) {
                 const t = (46.370 - rx) / (46.370 - 26.074);
                 return Math.max(0, Math.min(1, t)) * 5.926;
             }
-            if (rx >= 0.0 && rx < 86.67 && rz >= 0.0 && rz <= 22.0) {
-                if (currentElev < 1.5 && rx > 44.0 && rx < 52.0 && rz >= 13.0 && rz <= 16.8) {
+            // 3. Upper Level (Piano Nobile)
+            if (rx >= 0.0 && rx < 86.67 && ry >= 0.0 && ry <= 22.0) {
+                if (currentElev < 1.5 && rx > 44.0 && rx < 52.0 && ry >= 13.0 && ry <= 16.8) {
                     return 0.0;
                 }
                 return 5.926;
             }
-            if (rx >= 86.67 && rx <= 103.26 && rz >= 0.0 && rz < 7.35 && currentElev > 3.5) {
+            // 4. West Colonnade South Plinth Extension
+            if (rx >= 86.67 && rx <= 103.26 && ry >= 0.0 && ry < 7.35 && currentElev > 3.5) {
                 return 5.926;
             }
             return 0.0;
@@ -1400,15 +1377,12 @@
         // 7. MAGNETIC MULTI-RAY GAZE CONE + ENLARGED SELECTION BOUNDARY SENSOR
         // ============================================================================
         const raycaster = new THREE.Raycaster();
-        // 9-point magnetic cone offsets around the aim point so thin mullions & distant columns
-        // are caught effortlessly without pixel-hunting!
         const MAGNETIC_CONE_OFFSETS = [
             [0.0, 0.0],
             [0.022, 0.0], [-0.022, 0.0], [0.0, 0.022], [0.0, -0.022],
             [0.042, 0.028], [-0.042, 0.028], [0.042, -0.028], [-0.042, -0.028]
         ];
 
-        // Priority ranking so slender architectural features win over background walls/slabs
         const VOICE_PRIORITY = {
             FOYER_FRAMES: 6,
             EXT_COLUMNS: 6,
@@ -1441,7 +1415,6 @@
                     const cfg = VOICE_CONFIG[v];
                     if (!cfg || h.distance > cfg.maxDist) continue;
 
-                    // Score combines feature priority, center-ray preference, and proximity
                     const priority = VOICE_PRIORITY[v] || 1;
                     const centerBonus = (c === 0) ? 2.5 : 1.0;
                     const distFactor = 1.0 - (h.distance / cfg.maxDist);
@@ -1456,7 +1429,6 @@
                             objectData: h.object.userData
                         };
                     }
-                    // Stop at the first solid wall/slab along this ray so we don't select through opaque walls
                     if (!h.object.userData.passThrough && v === 'FOYER_VOID') {
                         break;
                     }
@@ -1467,7 +1439,7 @@
 
         function evaluateSpatialZoneAndGaze(dt) {
             const rx = playerFootPos.x;
-            const ry = playerFootPos.z;
+            const ry = -playerFootPos.z; // Positive Rhino Y (0..20.89m)
             const rz = playerFootPos.y;
 
             isOnExteriorStair = (rx >= 86.5 && rx <= 103.5 && ry >= 7.3 && ry <= 20.6);
@@ -1487,16 +1459,13 @@
             const aimCoords = (isPointerLocked || autoRouteActive) ? new THREE.Vector2(0, 0) : mouseNDC;
             const candidateHit = findBestGazeTarget(aimCoords);
 
-            // Smooth 0.28s magnetic hold so panning across thin columns/frames never drops out abruptly
             if (candidateHit) {
                 currentGazeHit = candidateHit;
-                lastGazeVoice = candidateHit.voice;
                 gazeHoldTimer = 0.28;
             } else if (gazeHoldTimer > 0 && currentGazeHit) {
                 gazeHoldTimer -= dt;
             } else {
                 currentGazeHit = null;
-                lastGazeVoice = null;
             }
 
             for (const vk of ACTIVE_VOICE_KEYS) {
@@ -1575,25 +1544,28 @@
         }
 
         function cycleVisualStyle() {
-            const styles = ['ARCHITECTURAL', 'HYBRID', 'LIDAR'];
+            const styles = ['LIDAR', 'HYBRID', 'ARCHITECTURAL'];
             visualStyle = styles[(styles.indexOf(visualStyle) + 1) % styles.length];
             const btn = document.getElementById('btn-view');
 
-            if (visualStyle === 'ARCHITECTURAL') {
-                btn.innerText = "View: Shaded [V]";
-                allShadedMeshes.forEach(m => m.visible = true);
-                allWireLines.forEach(l => l.visible = true);
-                if (lidarPointsSystem) lidarPointsSystem.visible = false;
+            if (visualStyle === 'LIDAR') {
+                btn.innerText = "View: LiDAR Point Cloud [V]";
+                allShadedMeshes.forEach(m => m.visible = false);
+                allWireLines.forEach(l => l.visible = false);
+                darkCoreMeshes.forEach(d => d.visible = true);
+                if (lidarPointsSystem) lidarPointsSystem.visible = true;
             } else if (visualStyle === 'HYBRID') {
                 btn.innerText = "View: Hybrid [V]";
                 allShadedMeshes.forEach(m => m.visible = true);
                 allWireLines.forEach(l => l.visible = true);
+                darkCoreMeshes.forEach(d => d.visible = false);
                 if (lidarPointsSystem) lidarPointsSystem.visible = true;
             } else {
-                btn.innerText = "View: LiDAR [V]";
-                allShadedMeshes.forEach(m => m.visible = false);
+                btn.innerText = "View: Shaded [V]";
+                allShadedMeshes.forEach(m => m.visible = true);
                 allWireLines.forEach(l => l.visible = true);
-                if (lidarPointsSystem) lidarPointsSystem.visible = true;
+                darkCoreMeshes.forEach(d => d.visible = false);
+                if (lidarPointsSystem) lidarPointsSystem.visible = false;
             }
         }
 
@@ -1673,7 +1645,6 @@
 
             if (k === 'm') setInteractionMode(interactionMode === 'AUTONOMOUS' ? 'ACTIVE' : 'AUTONOMOUS');
             if (k === 'r') toggleGuidedRoute();
-            if (k === 't') toggleVideoSoundtrack();
             if (k === 'v') cycleVisualStyle();
             if (k === 'c') sequencerSteps = Array.from({ length: 16 }, () => []);
             if (['1', '2', '3', '4', '5', '6'].includes(k)) teleportToWaypoint(parseInt(k, 10) - 1);
@@ -1766,7 +1737,7 @@
                 lidarPointsSystem.material.uniforms.uTime.value = elapsed;
                 for (let i = activeRipples.length - 1; i >= 0; i--) {
                     activeRipples[i].radius += dt * 16.0;
-                    if (activeRipples[i].radius > 30.0) activeRipples.splice(i, 1);
+                    if (activeRipples[i].radius > 28.0) activeRipples.splice(i, 1);
                 }
                 for (let i = 0; i < MAX_RIPPLES; i++) {
                     if (i < activeRipples.length) {
