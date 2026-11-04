@@ -8,11 +8,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap');
 
         :root {
-            --bg: #08090c;
-            --pill-bg: rgba(12, 14, 20, 0.55);
-            --pill-border: rgba(255, 255, 255, 0.10);
+            --bg: #07080b;
+            --pill-bg: rgba(10, 12, 18, 0.58);
+            --pill-border: rgba(255, 255, 255, 0.11);
             --accent: #e5c378;
-            --text: rgba(255, 255, 255, 0.88);
+            --blue-wave: #4ea8ff;
+            --text: rgba(255, 255, 255, 0.90);
             --muted: rgba(255, 255, 255, 0.42);
         }
 
@@ -45,18 +46,18 @@
             inset: 0;
             pointer-events: none;
             z-index: 2;
-            background: radial-gradient(circle at center, transparent 65%, rgba(4, 6, 10, 0.65) 100%);
+            background: radial-gradient(circle at center, transparent 62%, rgba(4, 6, 12, 0.68) 100%);
             transition: background 1.2s ease;
         }
         #vignette.inside-void {
-            background: radial-gradient(circle at center, rgba(16, 22, 38, 0.08) 50%, rgba(3, 5, 12, 0.86) 100%);
+            background: radial-gradient(circle at center, rgba(18, 28, 52, 0.10) 48%, rgba(2, 4, 10, 0.88) 100%);
         }
 
         /* Minimalist Start Screen */
         #overlay {
             position: fixed;
             inset: 0;
-            background: rgba(7, 8, 12, 0.92);
+            background: rgba(6, 7, 11, 0.92);
             backdrop-filter: blur(20px);
             z-index: 100;
             display: flex;
@@ -83,11 +84,14 @@
             color: var(--muted);
             text-transform: uppercase;
             margin-bottom: 36px;
+            text-align: center;
         }
 
         .start-buttons {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .btn-minimal {
@@ -105,16 +109,16 @@
         }
         .btn-minimal:hover {
             background: #fff;
-            color: #08090c;
+            color: #07080b;
             border-color: #fff;
         }
         .btn-minimal.secondary {
-            color: var(--accent);
-            border-color: rgba(229, 195, 120, 0.35);
+            color: var(--blue-wave);
+            border-color: rgba(78, 168, 255, 0.40);
         }
         .btn-minimal.secondary:hover {
-            background: var(--accent);
-            color: #08090c;
+            background: var(--blue-wave);
+            color: #07080b;
         }
 
         /* Ultra-Minimalist HUD */
@@ -134,11 +138,11 @@
             left: 20px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             background: var(--pill-bg);
             border: 1px solid var(--pill-border);
             backdrop-filter: blur(12px);
-            padding: 6px 8px;
+            padding: 5px 8px;
             border-radius: 999px;
             pointer-events: auto;
         }
@@ -149,7 +153,7 @@
             color: var(--muted);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10.5px;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             padding: 5px 11px;
             border-radius: 999px;
             cursor: pointer;
@@ -159,13 +163,14 @@
             color: #fff;
         }
         .pill-btn.active {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.13);
             color: #fff;
         }
         .pill-divider {
             width: 1px;
             height: 12px;
             background: rgba(255, 255, 255, 0.12);
+            margin: 0 2px;
         }
 
         /* Top-Right: Subtle Zone Readout */
@@ -190,27 +195,40 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: var(--accent);
+            background: var(--blue-wave);
+            box-shadow: 0 0 8px var(--blue-wave);
         }
 
-        /* Center Reticle & Subtle Gaze Whisper */
+        /* Center Magnetic Focus Reticle (Larger Aperture for Thin Elements) */
         #reticle {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 6px;
-            height: 6px;
+            width: 16px;
+            height: 16px;
             transform: translate(-50%, -50%);
-            border: 1px solid rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.32);
             border-radius: 50%;
-            transition: all 0.18s ease;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
         }
+        #reticle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 3px;
+            height: 3px;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 50%;
+        }
         #reticle.focused {
-            width: 18px;
-            height: 18px;
-            border-color: var(--accent);
-            background: rgba(229, 195, 120, 0.12);
+            width: 34px;
+            height: 34px;
+            border-color: var(--blue-wave);
+            background: rgba(78, 168, 255, 0.10);
+            box-shadow: 0 0 18px rgba(78, 168, 255, 0.35);
         }
 
         #gaze-caption {
@@ -219,16 +237,16 @@
             left: 50%;
             transform: translateX(-50%);
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 1.5px;
+            font-size: 10.5px;
+            letter-spacing: 1.2px;
             color: var(--text);
             background: var(--pill-bg);
             border: 1px solid var(--pill-border);
             backdrop-filter: blur(10px);
-            padding: 6px 16px;
+            padding: 5px 15px;
             border-radius: 999px;
             opacity: 0;
-            transition: opacity 0.25s ease;
+            transition: opacity 0.22s ease;
             pointer-events: none;
             white-space: nowrap;
         }
@@ -244,7 +262,7 @@
             transform: translateX(-50%);
             display: flex;
             align-items: center;
-            gap: 18px;
+            gap: 16px;
             background: var(--pill-bg);
             border: 1px solid var(--pill-border);
             backdrop-filter: blur(12px);
@@ -267,7 +285,7 @@
             color: var(--muted);
         }
         .mini-bar-bg {
-            width: 28px;
+            width: 26px;
             height: 3px;
             background: rgba(255, 255, 255, 0.10);
             border-radius: 99px;
@@ -284,7 +302,7 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 9.5px;
             color: var(--muted);
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -298,10 +316,10 @@
     <!-- Minimalist Start Screen -->
     <div id="overlay">
         <div class="start-title">JAMES-SIMON-GALERIE</div>
-        <div class="start-sub">Interactive Music Architecture · Edited Rhino Geometry (616 Visible Elements)</div>
+        <div class="start-sub">Audio-Spatial Path · 3D Interactive Architecture</div>
         <div class="start-buttons">
             <button class="btn-minimal" id="btn-start-free">Walk Freely</button>
-            <button class="btn-minimal secondary" id="btn-start-guided">Auto-Walk Route</button>
+            <button class="btn-minimal secondary" id="btn-start-guided">Auto-Walk Spatial Path</button>
         </div>
     </div>
 
@@ -312,7 +330,8 @@
             <button class="pill-btn active" id="btn-mode-auto" onclick="setInteractionMode('AUTONOMOUS')" title="Mode 2: Building Speaks by Gaze & Location [M]">Building Speaks</button>
             <button class="pill-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Elements to Play & Loop [M]">User Activates</button>
             <div class="pill-divider"></div>
-            <button class="pill-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Route [R]">Route [R]</button>
+            <button class="pill-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Spatial Path [R]">Route [R]</button>
+            <button class="pill-btn" id="btn-sound-src" onclick="toggleVideoSoundtrack()" title="Toggle Original Video Soundtrack Layer [T]">Track: Hybrid [T]</button>
             <button class="pill-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: Shaded [V]</button>
         </div>
 
@@ -322,38 +341,38 @@
             <span id="zone-name">EXTERIOR STAIRS</span>
         </div>
 
-        <!-- Center Reticle & Subtle Gaze Whisper -->
+        <!-- Center Magnetic Gaze Reticle & Subtle Caption -->
         <div id="reticle"></div>
         <div id="gaze-caption"></div>
 
         <!-- Bottom-Center Minimalist Voice Strip -->
         <div class="bottom-strip">
             <div class="mini-meters">
-                <div class="mini-meter" title="1. Exterior Stairs Rhythm">
+                <div class="mini-meter" title="1. Exterior Stairs Pulse">
                     <span>STAIR</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_STAIR" style="background:#f4a261"></div></div>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_STAIR" style="background:#5aa9ff"></div></div>
                 </div>
-                <div class="mini-meter" title="2. Exterior Columns (Gaze + Proximity)">
+                <div class="mini-meter" title="2. Exterior Columns Arpeggio (Gaze + Proximity)">
                     <span>COL</span>
                     <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-EXT_COLUMNS" style="background:#e5c378"></div></div>
                 </div>
-                <div class="mini-meter" title="3. Entrance Glass Facade (Gaze + Proximity)">
+                <div class="mini-meter" title="3. Entrance Glass Harmonic Pad (Gaze + Proximity)">
                     <span>GLASS</span>
                     <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-ENTRANCE_GLASS" style="background:#64e8de"></div></div>
                 </div>
                 <div class="mini-meter" title="4. Closed Foyer Void Atmosphere">
                     <span>VOID</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_VOID" style="background:#b388ff"></div></div>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_VOID" style="background:#9d7bff"></div></div>
                 </div>
-                <div class="mini-meter" title="5. Facade Frames Rhythm (Gaze + Proximity)">
+                <div class="mini-meter" title="5. Facade Frames Plucked Synth (Gaze + Proximity)">
                     <span>FRAME</span>
-                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_FRAMES" style="background:#ff7e67"></div></div>
+                    <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-FOYER_FRAMES" style="background:#ff9f68"></div></div>
                 </div>
-                <div class="mini-meter" title="6. Interior Descending Stair (Gaze + Proximity)">
+                <div class="mini-meter" title="6. Interior Descending Stair Scale (Gaze + Proximity)">
                     <span>DOWN</span>
                     <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-INT_STAIR_DOWN" style="background:#69f0ae"></div></div>
                 </div>
-                <div class="mini-meter" title="7. Skylight Glass Roof (Gaze + Proximity)">
+                <div class="mini-meter" title="7. Skylight Glass Roof Shimmer (Gaze + Proximity)">
                     <span>ROOF</span>
                     <div class="mini-bar-bg"><div class="mini-bar-fill" id="bar-SKYLIGHT_ROOF" style="background:#70d6ff"></div></div>
                 </div>
@@ -365,48 +384,60 @@
 
     <script>
         // ============================================================================
-        // 1. ARCHITECTURAL VOICE CONFIGURATION
+        // 1. ARCHITECTURAL VOICE CONFIGURATION & MAGNETIC SELECTION INFLATION
         // ============================================================================
+        // Notice `selectionPad`: expands the invisible raycast proxy around thin frames,
+        // slender columns, skylight fins, and stair steps so they are effortless to catch from afar!
         const VOICE_CONFIG = {
             EXT_STAIR: {
-                label: "Exterior Stairs · Limestone Rhythm",
-                colorHex: 0xd9b282,
-                maxDist: 38.0
+                label: "Exterior Stairs · Deep Electronic Pulse",
+                colorHex: 0xc8b08a,
+                maxDist: 45.0,
+                selectionPad: [0.35, 0.35, 0.35]
             },
             EXT_COLUMNS: {
-                label: "Terrace Columns · Cast-Stone Pulse",
+                label: "Terrace Columns · Warm Synth Arpeggio",
                 colorHex: 0xe5c378,
-                maxDist: 52.0
+                maxDist: 65.0,
+                // Columns are 0.28m slender piers -> inflate selection boundary by +1.15m horizontally!
+                selectionPad: [1.15, 0.40, 1.15]
             },
             ENTRANCE_GLASS: {
-                label: "Entrance Glass Facade · Harmonic Voice",
+                label: "Entrance Glass Facade · Lush C-Minor9 Pad",
                 colorHex: 0x78dce8,
-                maxDist: 42.0
+                maxDist: 50.0,
+                selectionPad: [0.60, 0.40, 0.60]
             },
             FOYER_VOID: {
-                label: "Closed Foyer Mass · Architectural Void",
-                colorHex: 0xc4b7d7,
-                maxDist: 45.0
+                label: "Closed Foyer Mass · Deep Architectural Void",
+                colorHex: 0x9d8ec4,
+                maxDist: 50.0,
+                selectionPad: [0.10, 0.10, 0.10]
             },
             FOYER_FRAMES: {
-                label: "Facade Frames · Bronze Mullion Rhythm",
-                colorHex: 0xe08e79,
-                maxDist: 36.0
+                label: "Facade Frames · Warm Plucked Synth Rhythm",
+                colorHex: 0xd99b72,
+                maxDist: 48.0,
+                // Mullions & Transoms are 0.08m thin -> inflate selection boundary by +0.95m so gaze catches them easily!
+                selectionPad: [0.95, 0.55, 0.95]
             },
             INT_STAIR_DOWN: {
-                label: "Interior Descending Stair · Cascading Scale",
+                label: "Interior Descending Stair · Cascading Analog Scale",
                 colorHex: 0x7bdff2,
-                maxDist: 36.0
+                maxDist: 45.0,
+                selectionPad: [0.55, 0.55, 0.55]
             },
             SKYLIGHT_ROOF: {
-                label: "Skylight Glass Roof & Fins · Celestial Shimmer",
+                label: "Skylight Glass Roof & Fins · High Shimmer Chord",
                 colorHex: 0x90e0ef,
-                maxDist: 38.0
+                maxDist: 48.0,
+                selectionPad: [0.85, 0.75, 0.85]
             },
             CONTEXT_MASS: {
                 label: "Architectural Plinth & Mass",
-                colorHex: 0x8d95a5,
-                maxDist: 35.0
+                colorHex: 0x828996,
+                maxDist: 38.0,
+                selectionPad: [0.0, 0.0, 0.0]
             }
         };
 
@@ -421,7 +452,7 @@
         ];
 
         // ============================================================================
-        // 2. WAYPOINTS & GUIDED ROUTE
+        // 2. WAYPOINTS & GUIDED ROUTE (MATCHING INSTAGRAM VIDEO PATH)
         // ============================================================================
         const WAYPOINTS = [
             { zone: "EXTERIOR STAIR FOOT",      pos: { x: 104.8, y: 0.0,  z: 14.0 }, lookAt: { x: 86.0, y: 6.5,  z: 14.0 } },
@@ -448,8 +479,9 @@
         // ============================================================================
         // 3. STATE
         // ============================================================================
-        let interactionMode = 'AUTONOMOUS'; // 'AUTONOMOUS' (Building Speaks) or 'ACTIVE' (User Activates)
-        let visualStyle = 'ARCHITECTURAL';  // Default to clean Architectural Solid + Wireframe from Rhino!
+        let interactionMode = 'AUTONOMOUS';
+        let visualStyle = 'ARCHITECTURAL';
+        let soundtrackMode = 'HYBRID'; // 'HYBRID' (Video Track + Gaze Synth) or 'SYNTH_ONLY'
         let isRunning = false;
         let isPointerLocked = false;
         let autoRouteActive = false;
@@ -457,6 +489,8 @@
 
         let mouseNDC = new THREE.Vector2(0, 0);
         let currentGazeHit = null;
+        let lastGazeVoice = null;
+        let gazeHoldTimer = 0; // Smooth hysteresis so thin elements don't flicker when panning across them
         let isInsideClosedMass = false;
         let isOnExteriorStair = false;
         let isMoving = false;
@@ -468,66 +502,153 @@
         const voiceTargetLevels = { ...voiceLevels };
 
         // ============================================================================
-        // 4. WEB AUDIO SPATIAL SYNTHESIS ENGINE
+        // 4. HARMONIC WEB AUDIO ENGINE + INSTAGRAM VIDEO SOUNDTRACK SYNC
+        //    (Tuned strictly to C Minor / Eb Major Pentatonic like the Instagram Video
+        //     with Single-Dominant Gaze Ducking so voices NEVER clash!)
         // ============================================================================
         let audioCtx = null;
         let masterGain = null;
+        let compressor = null;
         let reverbNode = null;
         let reverbSendGain = null;
+        let delayNode = null;
+        let delaySendGain = null;
+
+        // Reference Video Audio Element (from https://www.instagram.com/p/DclVEKMxCo1/)
+        let refMediaEl = null;
+        let refMediaFilter = null;
+        let refMediaGain = null;
+
         const continuousNodes = {};
 
-        const BPM = 110;
-        const STEP_TIME_MS = ((60 / BPM) / 4) * 1000;
+        // 120 BPM (matches the deep electronic four-on-the-floor pulse in your Instagram video)
+        const BPM = 120;
+        const STEP_TIME_MS = ((60 / BPM) / 4) * 1000; // 125ms per 16th note
         let currentStep = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
 
         function initAudioEngine() {
             if (audioCtx) {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
+                if (refMediaEl && refMediaEl.paused && soundtrackMode === 'HYBRID') {
+                    refMediaEl.play().catch(() => {});
+                }
                 return;
             }
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = 0.80;
 
+            // Soft Studio Bus Compressor / Limiter so multiple layers always blend silkily
+            compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-16, audioCtx.currentTime);
+            compressor.knee.setValueAtTime(14, audioCtx.currentTime);
+            compressor.ratio.setValueAtTime(4.5, audioCtx.currentTime);
+            compressor.attack.setValueAtTime(0.008, audioCtx.currentTime);
+            compressor.release.setValueAtTime(0.22, audioCtx.currentTime);
+
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.78;
+
+            // Lush Stereo Reverb (3.4s warm decay)
             reverbNode = audioCtx.createConvolver();
-            const revLen = audioCtx.sampleRate * 4.2;
+            const revLen = Math.floor(audioCtx.sampleRate * 3.4);
             const impulse = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
             for (let ch = 0; ch < 2; ch++) {
                 const data = impulse.getChannelData(ch);
                 for (let i = 0; i < revLen; i++) {
                     const t = i / revLen;
-                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.6);
+                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.4) * 0.6;
                 }
             }
             reverbNode.buffer = impulse;
-
             reverbSendGain = audioCtx.createGain();
-            reverbSendGain.gain.value = 0.45;
+            reverbSendGain.gain.value = 0.42;
+
+            // Dotted-8th Warm Tape Delay (0.375s at 120 BPM)
+            delayNode = audioCtx.createDelay(1.0);
+            delayNode.delayTime.value = 0.375;
+            const delayFeedback = audioCtx.createGain();
+            delayFeedback.gain.value = 0.34;
+            const delayFilter = audioCtx.createBiquadFilter();
+            delayFilter.type = 'lowpass';
+            delayFilter.frequency.value = 1800;
+            delaySendGain = audioCtx.createGain();
+            delaySendGain.gain.value = 0.25;
+
+            delayNode.connect(delayFilter);
+            delayFilter.connect(delayFeedback);
+            delayFeedback.connect(delayNode);
+            delayNode.connect(delaySendGain);
+            delaySendGain.connect(masterGain);
+
             reverbSendGain.connect(reverbNode);
             reverbNode.connect(masterGain);
-            masterGain.connect(audioCtx.destination);
+            masterGain.connect(compressor);
+            compressor.connect(audioCtx.destination);
 
             setupContinuousVoices();
+            setupReferenceVideoTrack();
             startSequencerLoop();
         }
 
+        function setupReferenceVideoTrack() {
+            try {
+                refMediaEl = document.createElement('video');
+                refMediaEl.src = 'audio/jsg_reference_track.mp4';
+                refMediaEl.loop = true;
+                refMediaEl.muted = false;
+                refMediaEl.playsInline = true;
+                refMediaEl.crossOrigin = 'anonymous';
+                refMediaEl.style.display = 'none';
+                document.body.appendChild(refMediaEl);
+
+                const srcNode = audioCtx.createMediaElementSource(refMediaEl);
+                refMediaFilter = audioCtx.createBiquadFilter();
+                refMediaFilter.type = 'lowpass';
+                refMediaFilter.frequency.value = 1800;
+
+                refMediaGain = audioCtx.createGain();
+                refMediaGain.gain.value = 0.32;
+
+                srcNode.connect(refMediaFilter);
+                refMediaFilter.connect(refMediaGain);
+                refMediaGain.connect(masterGain);
+
+                refMediaEl.play().catch(() => {});
+            } catch (err) {
+                console.warn("Reference track fallback to pure synth:", err);
+            }
+        }
+
+        function toggleVideoSoundtrack() {
+            soundtrackMode = soundtrackMode === 'HYBRID' ? 'SYNTH_ONLY' : 'HYBRID';
+            const btn = document.getElementById('btn-sound-src');
+            if (soundtrackMode === 'HYBRID') {
+                btn.innerText = "Track: Hybrid [T]";
+                if (refMediaEl && refMediaEl.paused) refMediaEl.play().catch(() => {});
+            } else {
+                btn.innerText = "Track: Pure Synth [T]";
+            }
+        }
+
+        // All continuous & rhythmic voices share the exact C Minor 9 / Eb Major 7 harmonic field:
+        // Notes: C, D, Eb, F, G, Bb (zero dissonance regardless of combination!)
         function setupContinuousVoices() {
             const now = audioCtx.currentTime;
 
-            // Closed Foyer Void Atmosphere
+            // 1. CLOSED FOYER VOID ATMOSPHERE (Warm C2 + G2 + Eb3 + G3 + D4 deep analog pad)
             const voidGain = audioCtx.createGain();
             voidGain.gain.value = 0.0001;
             const voidFilter = audioCtx.createBiquadFilter();
             voidFilter.type = 'lowpass';
-            voidFilter.frequency.value = 260;
-            [73.42, 110.0, 146.83, 220.0, 261.63].forEach((f, idx) => {
+            voidFilter.frequency.value = 280;
+
+            [65.41, 98.00, 130.81, 155.56, 196.00, 293.66].forEach((f, idx) => {
                 const osc = audioCtx.createOscillator();
-                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                osc.type = idx < 2 ? 'sine' : 'sawtooth';
                 osc.frequency.value = f;
-                osc.detune.value = (idx - 2) * 4;
+                osc.detune.value = (idx - 2.5) * 3.5;
                 const g = audioCtx.createGain();
-                g.gain.value = idx < 2 ? 0.22 : 0.08;
+                g.gain.value = idx < 2 ? 0.16 : 0.045;
                 osc.connect(g);
                 g.connect(voidFilter);
                 osc.start(now);
@@ -537,20 +658,20 @@
             voidGain.connect(reverbSendGain);
             continuousNodes.FOYER_VOID = { gain: voidGain, filter: voidFilter };
 
-            // Entrance Glass Facade Continuous Harmonics
+            // 2. ENTRANCE GLASS FACADE (Silky warm Eb4 + G4 + Bb4 + D5 + F5 lush glass pad)
             const glassGain = audioCtx.createGain();
             glassGain.gain.value = 0.0001;
             const glassFilter = audioCtx.createBiquadFilter();
-            glassFilter.type = 'bandpass';
-            glassFilter.frequency.value = 1250;
-            glassFilter.Q.value = 1.4;
-            [587.33, 659.25, 880.0, 1046.50, 1318.51].forEach((f, idx) => {
+            glassFilter.type = 'lowpass';
+            glassFilter.frequency.value = 650;
+
+            [311.13, 392.00, 466.16, 587.33, 698.46].forEach((f, idx) => {
                 const osc = audioCtx.createOscillator();
-                osc.type = 'sine';
+                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
                 osc.frequency.value = f;
-                osc.detune.value = (idx - 2) * 5;
+                osc.detune.value = (idx - 2) * 4;
                 const g = audioCtx.createGain();
-                g.gain.value = 0.11;
+                g.gain.value = 0.065;
                 osc.connect(g);
                 g.connect(glassFilter);
                 osc.start(now);
@@ -558,21 +679,23 @@
             glassFilter.connect(glassGain);
             glassGain.connect(masterGain);
             glassGain.connect(reverbSendGain);
+            glassGain.connect(delaySendGain);
             continuousNodes.ENTRANCE_GLASS = { gain: glassGain, filter: glassFilter };
 
-            // Skylight Glass Roof Overhead Halo
+            // 3. SKYLIGHT GLASS ROOF OVERHEAD (Ethereal soft G4 + Bb4 + C5 + D5 + G5 airy halo)
             const skyGain = audioCtx.createGain();
             skyGain.gain.value = 0.0001;
             const skyFilter = audioCtx.createBiquadFilter();
             skyFilter.type = 'lowpass';
-            skyFilter.frequency.value = 2400;
-            [783.99, 880.0, 1174.66, 1479.98].forEach((f, idx) => {
+            skyFilter.frequency.value = 950;
+
+            [392.00, 466.16, 523.25, 587.33, 783.99].forEach((f, idx) => {
                 const osc = audioCtx.createOscillator();
                 osc.type = 'sine';
                 osc.frequency.value = f;
-                osc.detune.value = (idx - 1.5) * 6;
+                osc.detune.value = (idx - 2) * 5;
                 const g = audioCtx.createGain();
-                g.gain.value = 0.09;
+                g.gain.value = 0.055;
                 osc.connect(g);
                 g.connect(skyFilter);
                 osc.start(now);
@@ -580,6 +703,7 @@
             skyFilter.connect(skyGain);
             skyGain.connect(masterGain);
             skyGain.connect(reverbSendGain);
+            skyGain.connect(delaySendGain);
             continuousNodes.SKYLIGHT_ROOF = { gain: skyGain, filter: skyFilter };
         }
 
@@ -590,179 +714,279 @@
             for (const key of ACTIVE_VOICE_KEYS) {
                 const target = voiceTargetLevels[key] || 0;
                 const curr = voiceLevels[key] || 0;
-                const speed = target > curr ? 5.5 : 3.2;
+                // Smooth, musical envelope: gentle attack and silky release
+                const speed = target > curr ? 4.2 : 2.4;
                 voiceLevels[key] = curr + (target - curr) * Math.min(1, dt * speed);
                 if (voiceLevels[key] < 0.002 && target === 0) voiceLevels[key] = 0;
             }
 
+            // Automatically duck the Foyer Void drone slightly when a Gaze voice is active so they never muddy!
+            const activeGazeMax = Math.max(
+                voiceLevels.EXT_COLUMNS,
+                voiceLevels.ENTRANCE_GLASS,
+                voiceLevels.FOYER_FRAMES,
+                voiceLevels.INT_STAIR_DOWN,
+                voiceLevels.SKYLIGHT_ROOF
+            );
+            const voidDuck = 1.0 - activeGazeMax * 0.45;
+
             if (continuousNodes.FOYER_VOID) {
-                const lvl = voiceLevels.FOYER_VOID;
-                continuousNodes.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.65, now, 0.08);
-                continuousNodes.FOYER_VOID.filter.frequency.setTargetAtTime(160 + lvl * 520, now, 0.1);
-                reverbSendGain.gain.setTargetAtTime(0.35 + lvl * 0.55, now, 0.15);
+                const lvl = voiceLevels.FOYER_VOID * voidDuck;
+                continuousNodes.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.50, now, 0.12);
+                continuousNodes.FOYER_VOID.filter.frequency.setTargetAtTime(180 + lvl * 420, now, 0.15);
+                reverbSendGain.gain.setTargetAtTime(0.35 + voiceLevels.FOYER_VOID * 0.40, now, 0.18);
             }
+
             if (continuousNodes.ENTRANCE_GLASS) {
                 const lvl = voiceLevels.ENTRANCE_GLASS;
-                continuousNodes.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.48, now, 0.06);
-                continuousNodes.ENTRANCE_GLASS.filter.frequency.setTargetAtTime(700 + lvl * 2100, now, 0.08);
+                continuousNodes.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.42, now, 0.08);
+                continuousNodes.ENTRANCE_GLASS.filter.frequency.setTargetAtTime(420 + lvl * 1450, now, 0.10);
             }
+
             if (continuousNodes.SKYLIGHT_ROOF) {
                 const lvl = voiceLevels.SKYLIGHT_ROOF;
-                continuousNodes.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.42, now, 0.06);
-                continuousNodes.SKYLIGHT_ROOF.filter.frequency.setTargetAtTime(900 + lvl * 2800, now, 0.08);
+                continuousNodes.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.38, now, 0.08);
+                continuousNodes.SKYLIGHT_ROOF.filter.frequency.setTargetAtTime(500 + lvl * 1800, now, 0.10);
+            }
+
+            // Modulate the Original Instagram Video Soundtrack filter & gain by player location + gaze!
+            if (refMediaGain && refMediaFilter) {
+                if (soundtrackMode === 'HYBRID') {
+                    const baseTrackVol = isMoving ? 0.38 : 0.24;
+                    const gazeBoost = activeGazeMax * 0.18;
+                    refMediaGain.gain.setTargetAtTime(baseTrackVol + gazeBoost, now, 0.15);
+                    // Inside the Closed Foyer Void: warm deep lowpass (680Hz), opening up as you gaze at glass/frames/skylight
+                    const baseCutoff = isInsideClosedMass ? 750 : 1650;
+                    refMediaFilter.frequency.setTargetAtTime(baseCutoff + activeGazeMax * 2800, now, 0.15);
+                } else {
+                    refMediaGain.gain.setTargetAtTime(0.0001, now, 0.10);
+                }
             }
         }
 
+        // Soft, warm electronic voices inspired directly by the Instagram video (C Minor 9 palette)
         function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
-            if (!audioCtx || intensity <= 0.015) return;
+            if (!audioCtx || intensity <= 0.02) return;
             const now = audioCtx.currentTime;
 
             if (voiceKey === 'EXT_STAIR') {
-                const stairScale = [146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63, 293.66];
-                const freq = stairScale[Math.floor(stepIndex / 2) % stairScale.length];
+                // 1. EXTERIOR STAIRS: Warm deep electronic kick/bass pulse + C-minor bassline (like 0:02-0:10 in video)
+                const isKickStep = (stepIndex % 4 === 0);
+                if (isKickStep) {
+                    // Warm deep electronic kick drum
+                    const kickOsc = audioCtx.createOscillator();
+                    const kickEnv = audioCtx.createGain();
+                    kickOsc.type = 'sine';
+                    kickOsc.frequency.setValueAtTime(118.0, now);
+                    kickOsc.frequency.exponentialRampToValueAtTime(42.0, now + 0.11);
+
+                    const kPeak = Math.min(0.38, intensity * 0.34);
+                    kickEnv.gain.setValueAtTime(0.001, now);
+                    kickEnv.gain.linearRampToValueAtTime(kPeak, now + 0.006);
+                    kickEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+                    kickOsc.connect(kickEnv);
+                    kickEnv.connect(masterGain);
+                    kickOsc.start(now);
+                    kickOsc.stop(now + 0.25);
+                } else if (stepIndex % 2 === 0) {
+                    // Warm off-beat deep bass synth (C2, Eb2, F2, G2)
+                    const bassNotes = [65.41, 77.78, 87.31, 98.00];
+                    const freq = bassNotes[Math.floor(stepIndex / 4) % bassNotes.length];
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const env = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(180 + intensity * 320, now);
+                    filter.frequency.exponentialRampToValueAtTime(95, now + 0.20);
+
+                    const peak = Math.min(0.26, intensity * 0.22);
+                    env.gain.setValueAtTime(0.001, now);
+                    env.gain.linearRampToValueAtTime(peak, now + 0.015);
+                    env.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+                    osc.connect(filter);
+                    filter.connect(env);
+                    env.connect(masterGain);
+                    osc.start(now);
+                    osc.stop(now + 0.23);
+                }
+            }
+            else if (voiceKey === 'EXT_COLUMNS') {
+                // 2. EXTERIOR COLUMNS: Warm muted analog synth arpeggio in C Minor 9 (C4, Eb4, G4, Bb4, D5)
+                const colArp = [261.63, 311.13, 392.00, 466.16, 587.33, 466.16, 392.00, 311.13];
+                const freq = colArp[stepIndex % colArp.length];
+
                 const osc = audioCtx.createOscillator();
-                const sub = audioCtx.createOscillator();
                 const filter = audioCtx.createBiquadFilter();
                 const env = audioCtx.createGain();
 
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, now);
-                osc.frequency.exponentialRampToValueAtTime(freq * 0.72, now + 0.18);
-                sub.type = 'sine';
-                sub.frequency.setValueAtTime(freq * 0.5, now);
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(320 + intensity * 750, now);
 
-                const peak = Math.min(0.45, intensity * 0.38);
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(450 + intensity * 1200, now);
+                filter.frequency.exponentialRampToValueAtTime(280, now + 0.20);
+
+                const peak = Math.min(0.28, intensity * 0.24);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.012);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.24);
 
-                osc.connect(filter); sub.connect(filter); filter.connect(env);
-                env.connect(masterGain); env.connect(reverbSendGain);
-                osc.start(now); sub.start(now);
-                osc.stop(now + 0.25); sub.stop(now + 0.25);
-            }
-            else if (voiceKey === 'EXT_COLUMNS') {
-                const colNotes = [293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
-                const freq = colNotes[(stepIndex * 3) % colNotes.length];
-                const osc = audioCtx.createOscillator();
-                const mod = audioCtx.createOscillator();
-                const modGain = audioCtx.createGain();
-                const env = audioCtx.createGain();
+                osc.connect(filter);
+                filter.connect(env);
+                env.connect(masterGain);
+                env.connect(delaySendGain);
+                env.connect(reverbSendGain);
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, now);
-                mod.type = 'sine';
-                mod.frequency.setValueAtTime(freq * 2.75, now);
-                modGain.gain.setValueAtTime(freq * 0.8 * intensity, now);
-                modGain.gain.exponentialRampToValueAtTime(0.1, now + 0.09);
-
-                const peak = Math.min(0.42, intensity * 0.36);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.006);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.19);
-
-                mod.connect(modGain); modGain.connect(osc.frequency);
-                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
-                osc.start(now); mod.start(now);
-                osc.stop(now + 0.20); mod.stop(now + 0.20);
+                osc.start(now);
+                osc.stop(now + 0.25);
             }
             else if (voiceKey === 'ENTRANCE_GLASS') {
-                const glassNotes = [880.0, 1046.50, 1174.66, 1318.51, 1567.98];
-                const freq = glassNotes[stepIndex % glassNotes.length];
+                // 3. ENTRANCE GLASS: Soft Rhodes/Glass harmonic bell note (Eb5, F5, G5, Bb5)
+                const glassNotes = [622.25, 698.46, 783.99, 932.33];
+                const freq = glassNotes[Math.floor(stepIndex / 4) % glassNotes.length];
+
                 const osc = audioCtx.createOscillator();
                 const env = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
-                const peak = Math.min(0.30, intensity * 0.26);
+                const peak = Math.min(0.18, intensity * 0.16);
                 env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.025);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
+                env.gain.linearRampToValueAtTime(peak, now + 0.04);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.65);
 
-                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
-                osc.start(now); osc.stop(now + 0.56);
+                osc.connect(env);
+                env.connect(masterGain);
+                env.connect(reverbSendGain);
+                env.connect(delaySendGain);
+
+                osc.start(now);
+                osc.stop(now + 0.66);
             }
             else if (voiceKey === 'FOYER_VOID') {
+                // 4. CLOSED FOYER VOID: Deep warm C2 sub-swell on downbeats
                 const osc = audioCtx.createOscillator();
                 const env = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(73.42, now);
-                const peak = Math.min(0.38, intensity * 0.32);
+                osc.frequency.setValueAtTime(65.41, now); // C2
+
+                const peak = Math.min(0.28, intensity * 0.24);
                 env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.08);
-                env.gain.exponentialRampToValueAtTime(0.001, now + 0.90);
-                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
-                osc.start(now); osc.stop(now + 0.92);
+                env.gain.linearRampToValueAtTime(peak, now + 0.12);
+                env.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+                osc.connect(env);
+                env.connect(masterGain);
+                env.connect(reverbSendGain);
+                osc.start(now);
+                osc.stop(now + 0.96);
             }
             else if (voiceKey === 'FOYER_FRAMES') {
-                const frameNotes = [440.0, 523.25, 659.25, 587.33, 783.99, 659.25];
+                // 5. FOYER FACADE FRAMES: Warm filtered plucked synth chord pulse (like 0:15-0:26 in video)
+                const frameNotes = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25]; // C4, Eb4, F4, G4, Bb4, C5
                 const freq = frameNotes[stepIndex % frameNotes.length];
-                const carrier = audioCtx.createOscillator();
-                const modulator = audioCtx.createOscillator();
-                const modGain = audioCtx.createGain();
-                const bandpass = audioCtx.createBiquadFilter();
+
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                const filter = audioCtx.createBiquadFilter();
                 const env = audioCtx.createGain();
 
-                carrier.type = 'triangle';
-                carrier.frequency.setValueAtTime(freq, now);
-                modulator.type = 'sine';
-                modulator.frequency.setValueAtTime(freq * 3.41, now);
-                modGain.gain.setValueAtTime(freq * 1.6 * intensity, now);
-                modGain.gain.exponentialRampToValueAtTime(1.0, now + 0.08);
-                bandpass.type = 'bandpass';
-                bandpass.frequency.setValueAtTime(freq * 1.5, now);
-                bandpass.Q.value = 2.0;
+                osc1.type = 'sawtooth';
+                osc2.type = 'triangle';
+                osc1.frequency.setValueAtTime(freq, now);
+                osc2.frequency.setValueAtTime(freq * 1.003, now);
 
-                const peak = Math.min(0.38, intensity * 0.34);
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(380 + intensity * 1350, now);
+                filter.frequency.exponentialRampToValueAtTime(220, now + 0.18);
+
+                const peak = Math.min(0.24, intensity * 0.20);
                 env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.004);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.16);
+                env.gain.linearRampToValueAtTime(peak, now + 0.010);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.20);
 
-                modulator.connect(modGain); modGain.connect(carrier.frequency);
-                carrier.connect(bandpass); bandpass.connect(env);
-                env.connect(masterGain); env.connect(reverbSendGain);
-                carrier.start(now); modulator.start(now);
-                carrier.stop(now + 0.17); modulator.stop(now + 0.17);
+                osc1.connect(filter);
+                osc2.connect(filter);
+                filter.connect(env);
+                env.connect(masterGain);
+                env.connect(delaySendGain);
+                env.connect(reverbSendGain);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 0.21);
+                osc2.stop(now + 0.21);
             }
             else if (voiceKey === 'INT_STAIR_DOWN') {
-                const descendingScale = [880.00, 783.99, 659.25, 587.33, 523.25, 440.00, 392.00, 329.63, 293.66, 261.63, 220.00, 196.00];
+                // 6. INTERIOR DESCENDING STAIRCASE: Smooth cascading C-Minor Pentatonic downward glide
+                const descendingScale = [
+                    783.99, // G5 (Top of Interior Stair)
+                    698.46, // F5
+                    622.25, // Eb5
+                    523.25, // C5
+                    466.16, // Bb4
+                    392.00, // G4
+                    349.23, // F4
+                    311.13, // Eb4
+                    261.63, // C4
+                    233.08, // Bb3
+                    196.00, // G3
+                    155.56  // Eb3 (Bottom of Interior Stair)
+                ];
                 const freq = descendingScale[stepIndex % descendingScale.length];
+
                 const osc = audioCtx.createOscillator();
                 const filter = audioCtx.createBiquadFilter();
                 const env = audioCtx.createGain();
 
-                osc.type = 'sawtooth';
+                osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, now);
+
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(500 + intensity * 1400, now);
-                filter.frequency.exponentialRampToValueAtTime(280, now + 0.22);
+                filter.frequency.setValueAtTime(420 + intensity * 1100, now);
+                filter.frequency.exponentialRampToValueAtTime(240, now + 0.26);
 
-                const peak = Math.min(0.40, intensity * 0.35);
+                const peak = Math.min(0.28, intensity * 0.24);
                 env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.01);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.26);
+                env.gain.linearRampToValueAtTime(peak, now + 0.015);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.28);
 
-                osc.connect(filter); filter.connect(env);
-                env.connect(masterGain); env.connect(reverbSendGain);
-                osc.start(now); osc.stop(now + 0.27);
+                osc.connect(filter);
+                filter.connect(env);
+                env.connect(masterGain);
+                env.connect(delaySendGain);
+                env.connect(reverbSendGain);
+
+                osc.start(now);
+                osc.stop(now + 0.29);
             }
             else if (voiceKey === 'SKYLIGHT_ROOF') {
-                const skyArp = [1174.66, 1318.51, 1567.98, 1760.00, 2093.00, 2349.32];
-                const freq = skyArp[stepIndex % skyArp.length];
+                // 7. SKYLIGHT GLASS ROOF: Ethereal soft high C-Minor9 harmonic shimmer (G5, Bb5, C6, D6)
+                const skyArp = [783.99, 932.33, 1046.50, 1174.66];
+                const freq = skyArp[Math.floor(stepIndex / 2) % skyArp.length];
+
                 const osc = audioCtx.createOscillator();
                 const env = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
-                const peak = Math.min(0.32, intensity * 0.28);
+                const peak = Math.min(0.16, intensity * 0.14);
                 env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.015);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.45);
+                env.gain.linearRampToValueAtTime(peak, now + 0.03);
+                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
 
-                osc.connect(env); env.connect(masterGain); env.connect(reverbSendGain);
-                osc.start(now); osc.stop(now + 0.46);
+                osc.connect(env);
+                env.connect(masterGain);
+                env.connect(reverbSendGain);
+                env.connect(delaySendGain);
+
+                osc.start(now);
+                osc.stop(now + 0.56);
             }
         }
 
@@ -771,40 +995,48 @@
                 if (!isRunning) return;
 
                 if (interactionMode === 'AUTONOMOUS') {
-                    if (voiceLevels.EXT_STAIR > 0.04) {
-                        if ((currentStep % 2 === 0) || (voiceLevels.EXT_STAIR > 0.65 && currentStep % 4 === 3)) {
+                    // 1. Exterior Stairs Pulse (plays steady electronic pulse while on stairs or gazing at stairs)
+                    if (voiceLevels.EXT_STAIR > 0.05) {
+                        if (currentStep % 2 === 0) {
                             triggerVoiceStep('EXT_STAIR', currentStep, voiceLevels.EXT_STAIR);
                         }
                     }
-                    if (voiceLevels.EXT_COLUMNS > 0.03) {
-                        const colPattern = [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0];
-                        if (colPattern[currentStep] || (voiceLevels.EXT_COLUMNS > 0.6 && currentStep % 2 === 0)) {
-                            triggerVoiceStep('EXT_COLUMNS', currentStep, voiceLevels.EXT_COLUMNS);
+
+                    // 2. Single-Dominant Gaze Voice Scheduling:
+                    // Only the dominant gazed architectural voice triggers melodic notes, preventing any clutter!
+                    const gazeCandidates = [
+                        'EXT_COLUMNS',
+                        'ENTRANCE_GLASS',
+                        'FOYER_FRAMES',
+                        'INT_STAIR_DOWN',
+                        'SKYLIGHT_ROOF'
+                    ];
+                    let domVoice = null;
+                    let domLevel = 0.04;
+                    for (const gk of gazeCandidates) {
+                        if (voiceLevels[gk] > domLevel) {
+                            domLevel = voiceLevels[gk];
+                            domVoice = gk;
                         }
                     }
-                    if (voiceLevels.ENTRANCE_GLASS > 0.04) {
-                        if (currentStep % 4 === 0 || (voiceLevels.ENTRANCE_GLASS > 0.55 && currentStep % 2 === 1)) {
-                            triggerVoiceStep('ENTRANCE_GLASS', currentStep, voiceLevels.ENTRANCE_GLASS);
-                        }
+
+                    if (domVoice === 'EXT_COLUMNS') {
+                        const colSteps = [1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0];
+                        if (colSteps[currentStep]) triggerVoiceStep('EXT_COLUMNS', currentStep, domLevel);
+                    } else if (domVoice === 'ENTRANCE_GLASS') {
+                        if (currentStep % 4 === 0) triggerVoiceStep('ENTRANCE_GLASS', currentStep, domLevel);
+                    } else if (domVoice === 'FOYER_FRAMES') {
+                        const frameSteps = [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0];
+                        if (frameSteps[currentStep]) triggerVoiceStep('FOYER_FRAMES', currentStep, domLevel);
+                    } else if (domVoice === 'INT_STAIR_DOWN') {
+                        if (currentStep % 2 === 0) triggerVoiceStep('INT_STAIR_DOWN', currentStep, domLevel);
+                    } else if (domVoice === 'SKYLIGHT_ROOF') {
+                        if (currentStep % 4 === 2) triggerVoiceStep('SKYLIGHT_ROOF', currentStep, domLevel);
                     }
-                    if (voiceLevels.FOYER_VOID > 0.10 && (currentStep === 0 || currentStep === 8)) {
+
+                    // 3. Deep Foyer Void Heartbeat on bar start
+                    if (voiceLevels.FOYER_VOID > 0.15 && currentStep === 0) {
                         triggerVoiceStep('FOYER_VOID', currentStep, voiceLevels.FOYER_VOID);
-                    }
-                    if (voiceLevels.FOYER_FRAMES > 0.03) {
-                        const framePattern = [0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1];
-                        if (framePattern[currentStep] || voiceLevels.FOYER_FRAMES > 0.65) {
-                            triggerVoiceStep('FOYER_FRAMES', currentStep, voiceLevels.FOYER_FRAMES);
-                        }
-                    }
-                    if (voiceLevels.INT_STAIR_DOWN > 0.03) {
-                        if (currentStep % 2 === 0 || voiceLevels.INT_STAIR_DOWN > 0.35) {
-                            triggerVoiceStep('INT_STAIR_DOWN', currentStep, voiceLevels.INT_STAIR_DOWN);
-                        }
-                    }
-                    if (voiceLevels.SKYLIGHT_ROOF > 0.03) {
-                        if (currentStep % 2 === 1 || voiceLevels.SKYLIGHT_ROOF > 0.5) {
-                            triggerVoiceStep('SKYLIGHT_ROOF', currentStep, voiceLevels.SKYLIGHT_ROOF);
-                        }
                     }
                 } else {
                     const events = sequencerSteps[currentStep];
@@ -821,12 +1053,12 @@
         }
 
         // ============================================================================
-        // 5. THREE.JS SCENE — EXACT EDITED RHINO MESHES & BREP EDGES
+        // 5. THREE.JS SCENE — EXACT EDITED RHINO MESHES + ENLARGED SELECTION PROXIES
         // ============================================================================
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x08090c);
-        scene.fog = new THREE.FogExp2(0x08090c, 0.0075);
+        scene.background = new THREE.Color(0x07080b);
+        scene.fog = new THREE.FogExp2(0x07080b, 0.0075);
 
         const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 260);
         camera.rotation.order = 'YXZ';
@@ -836,7 +1068,6 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Clean Architectural Lighting
         const ambientLight = new THREE.AmbientLight(0xe4ecff, 0.65);
         scene.add(ambientLight);
 
@@ -852,17 +1083,19 @@
         foyerWarmLight.position.set(58, 10.5, 14.5);
         scene.add(foyerWarmLight);
 
-        const raycastMeshes = [];
+        // Separate list of enlarged invisible selection proxy meshes so thin columns & mullions are easy to catch!
+        const selectionProxyMeshes = [];
         const solidColliderBoxes = [];
         const voiceMeshesMap = {};
         const allShadedMeshes = [];
         const allWireLines = [];
         let lidarPointsSystem = null;
+        let glowingPathLine = null;
 
         const MAX_RIPPLES = 10;
         const rippleCenters = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector3(0, -999, 0));
         const rippleRadii = new Float32Array(MAX_RIPPLES).fill(-1.0);
-        const rippleColors = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector3(1, 0.8, 0.4));
+        const rippleColors = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector3(0.3, 0.65, 1.0));
         let activeRipples = [];
 
         function spawnRipple(pointVec3, hexColor) {
@@ -874,6 +1107,12 @@
             });
             if (activeRipples.length > MAX_RIPPLES) activeRipples.shift();
         }
+
+        // Invisible material used for enlarged selection boundary proxies
+        const proxyMaterial = new THREE.MeshBasicMaterial({
+            visible: false,
+            side: THREE.DoubleSide
+        });
 
         function buildRhinoScene() {
             const data = window.JSG_MODEL_DATA;
@@ -900,7 +1139,6 @@
             });
 
             data.objects.forEach(obj => {
-                // Build exact Three.js BufferGeometry from the Rhino Brep's triangulated render mesh
                 const geom = new THREE.BufferGeometry();
                 geom.setAttribute('position', new THREE.Float32BufferAttribute(obj.v, 3));
                 geom.setIndex(obj.f);
@@ -908,7 +1146,7 @@
 
                 const baseMat = voiceMaterials[obj.voice] || voiceMaterials.CONTEXT_MASS;
                 const mesh = new THREE.Mesh(geom, baseMat);
-                mesh.userData = {
+                const meta = {
                     id: obj.id,
                     name: obj.name,
                     layer: obj.layer,
@@ -917,13 +1155,37 @@
                     min: { x: obj.min[0], y: obj.min[1], z: obj.min[2] },
                     max: { x: obj.max[0], y: obj.max[1], z: obj.max[2] }
                 };
+                mesh.userData = meta;
 
                 scene.add(mesh);
-                raycastMeshes.push(mesh);
                 allShadedMeshes.push(mesh);
                 if (voiceMeshesMap[obj.voice]) voiceMeshesMap[obj.voice].push(mesh);
 
-                // Build exact Rhino Brep Wireframe Edges
+                // ====================================================================
+                // ENLARGED SELECTION BOUNDARY PROXY FOR EASY GAZE / CURSOR INTERACTION
+                // ====================================================================
+                const cfg = VOICE_CONFIG[obj.voice] || VOICE_CONFIG.CONTEXT_MASS;
+                const pad = cfg.selectionPad || [0, 0, 0];
+                const rawSx = Math.max(0.05, obj.max[0] - obj.min[0]);
+                const rawSy = Math.max(0.05, obj.max[1] - obj.min[1]);
+                const rawSz = Math.max(0.05, obj.max[2] - obj.min[2]);
+
+                const cx = (obj.min[0] + obj.max[0]) * 0.5;
+                const cy = (obj.min[1] + obj.max[1]) * 0.5;
+                const cz = (obj.min[2] + obj.max[2]) * 0.5;
+
+                const proxyGeom = new THREE.BoxGeometry(
+                    rawSx + pad[0] * 2.0,
+                    rawSy + pad[1] * 2.0,
+                    rawSz + pad[2] * 2.0
+                );
+                const proxyMesh = new THREE.Mesh(proxyGeom, proxyMaterial);
+                proxyMesh.position.set(cx, cy, cz);
+                proxyMesh.userData = meta;
+                scene.add(proxyMesh);
+                selectionProxyMeshes.push(proxyMesh);
+
+                // Exact Rhino Brep Wireframe Edges
                 if (obj.e && obj.e.length > 0) {
                     const edgeGeom = new THREE.BufferGeometry();
                     edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(obj.e, 3));
@@ -937,7 +1199,7 @@
                     allWireLines.push(wire);
                 }
 
-                // Collision boxes (skip pass-through glass & stairs/slabs handled by elevation solver)
+                // Solid collision boxes
                 if (
                     !obj.passThrough &&
                     obj.voice !== 'EXT_STAIR' &&
@@ -948,25 +1210,22 @@
                     !obj.name.includes("Ceiling") &&
                     !obj.name.includes("Plinth")
                 ) {
-                    solidColliderBoxes.push(mesh.userData);
+                    solidColliderBoxes.push(meta);
                 }
 
-                // Sample LiDAR points along the Rhino mesh vertices/faces for Hybrid/LiDAR view
-                const vCol = new THREE.Color(VOICE_CONFIG[obj.voice]?.colorHex || 0x8d95a5);
+                // LiDAR point cloud sampling
+                const vCol = new THREE.Color(cfg.colorHex);
                 for (let k = 0; k < obj.v.length; k += 3) {
                     lidarPositions.push(obj.v[k], obj.v[k + 1], obj.v[k + 2]);
                     lidarColors.push(vCol.r, vCol.g, vCol.b);
                 }
-                const sx = obj.max[0] - obj.min[0];
-                const sy = obj.max[1] - obj.min[1];
-                const sz = obj.max[2] - obj.min[2];
-                const area = 2 * (sx * sy + sy * sz + sx * sz);
-                const numPts = Math.min(240, Math.max(8, Math.floor(area * 6.0)));
+                const area = 2 * (rawSx * rawSy + rawSy * rawSz + rawSx * rawSz);
+                const numPts = Math.min(220, Math.max(8, Math.floor(area * 5.5)));
                 for (let p = 0; p < numPts; p++) {
                     const face = Math.floor(Math.random() * 6);
-                    let px = obj.min[0] + Math.random() * sx;
-                    let py = obj.min[1] + Math.random() * sy;
-                    let pz = obj.min[2] + Math.random() * sz;
+                    let px = obj.min[0] + Math.random() * rawSx;
+                    let py = obj.min[1] + Math.random() * rawSy;
+                    let pz = obj.min[2] + Math.random() * rawSz;
                     if (face === 0) px = obj.min[0];
                     else if (face === 1) px = obj.max[0];
                     else if (face === 2) py = obj.min[1];
@@ -978,6 +1237,31 @@
                 }
             });
 
+            // Glowing Blue Spatial Path Line on the floor (inspired by the moving blue line in your Instagram video!)
+            const pathCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(104.5, 0.08, 14.0),
+                new THREE.Vector3(95.0,  2.85, 14.2),
+                new THREE.Vector3(86.6,  5.98, 15.8),
+                new THREE.Vector3(74.2,  5.98, 16.8),
+                new THREE.Vector3(62.0,  5.98, 14.5),
+                new THREE.Vector3(53.0,  5.98, 16.2),
+                new THREE.Vector3(44.5,  5.98, 18.2),
+                new THREE.Vector3(30.0,  5.98, 18.2),
+                new THREE.Vector3(27.0,  5.98, 15.0),
+                new THREE.Vector3(38.0,  2.60, 14.8),
+                new THREE.Vector3(46.2,  0.08, 14.8)
+            ]);
+            const pathPts = pathCurve.getPoints(180);
+            const pathGeom = new THREE.BufferGeometry().setFromPoints(pathPts);
+            const pathMat = new THREE.LineBasicMaterial({
+                color: 0x4ea8ff,
+                transparent: true,
+                opacity: 0.65
+            });
+            glowingPathLine = new THREE.Line(pathGeom, pathMat);
+            scene.add(glowingPathLine);
+
+            // LiDAR Shader
             const ptGeom = new THREE.BufferGeometry();
             ptGeom.setAttribute('position', new THREE.Float32BufferAttribute(lidarPositions, 3));
             ptGeom.setAttribute('color', new THREE.Float32BufferAttribute(lidarColors, 3));
@@ -986,7 +1270,7 @@
                 uniforms: {
                     uTime: { value: 0 },
                     uGazePoint: { value: new THREE.Vector3(0, -999, 0) },
-                    uGazeColor: { value: new THREE.Vector3(0.9, 0.76, 0.47) },
+                    uGazeColor: { value: new THREE.Vector3(0.31, 0.66, 1.0) },
                     uGazeActive: { value: 0.0 },
                     uRippleCenters: { value: rippleCenters },
                     uRippleRadii: { value: rippleRadii },
@@ -1053,7 +1337,7 @@
             });
 
             lidarPointsSystem = new THREE.Points(ptGeom, ptMat);
-            lidarPointsSystem.visible = false; // Default to clean Architectural Solid view
+            lidarPointsSystem.visible = false;
             scene.add(lidarPointsSystem);
         }
 
@@ -1113,11 +1397,75 @@
         }
 
         // ============================================================================
-        // 7. SPATIAL ZONE & GAZE + PROXIMITY ACOUSTIC ENGINE
+        // 7. MAGNETIC MULTI-RAY GAZE CONE + ENLARGED SELECTION BOUNDARY SENSOR
         // ============================================================================
         const raycaster = new THREE.Raycaster();
+        // 9-point magnetic cone offsets around the aim point so thin mullions & distant columns
+        // are caught effortlessly without pixel-hunting!
+        const MAGNETIC_CONE_OFFSETS = [
+            [0.0, 0.0],
+            [0.022, 0.0], [-0.022, 0.0], [0.0, 0.022], [0.0, -0.022],
+            [0.042, 0.028], [-0.042, 0.028], [0.042, -0.028], [-0.042, -0.028]
+        ];
 
-        function evaluateSpatialZoneAndGaze() {
+        // Priority ranking so slender architectural features win over background walls/slabs
+        const VOICE_PRIORITY = {
+            FOYER_FRAMES: 6,
+            EXT_COLUMNS: 6,
+            SKYLIGHT_ROOF: 5,
+            INT_STAIR_DOWN: 5,
+            ENTRANCE_GLASS: 4,
+            EXT_STAIR: 3,
+            FOYER_VOID: 1,
+            CONTEXT_MASS: 0
+        };
+
+        function findBestGazeTarget(baseAimNDC) {
+            let bestCandidate = null;
+            let bestScore = -999;
+
+            for (let c = 0; c < MAGNETIC_CONE_OFFSETS.length; c++) {
+                const off = MAGNETIC_CONE_OFFSETS[c];
+                const sampleNDC = new THREE.Vector2(
+                    Math.max(-1, Math.min(1, baseAimNDC.x + off[0])),
+                    Math.max(-1, Math.min(1, baseAimNDC.y + off[1]))
+                );
+                raycaster.setFromCamera(sampleNDC, camera);
+                const hits = raycaster.intersectObjects(selectionProxyMeshes, false);
+
+                for (let i = 0; i < Math.min(hits.length, 4); i++) {
+                    const h = hits[i];
+                    const v = h.object.userData.voice;
+                    if (!v || v === 'CONTEXT_MASS') continue;
+
+                    const cfg = VOICE_CONFIG[v];
+                    if (!cfg || h.distance > cfg.maxDist) continue;
+
+                    // Score combines feature priority, center-ray preference, and proximity
+                    const priority = VOICE_PRIORITY[v] || 1;
+                    const centerBonus = (c === 0) ? 2.5 : 1.0;
+                    const distFactor = 1.0 - (h.distance / cfg.maxDist);
+                    const score = priority * 3.0 + centerBonus + distFactor * 2.0;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestCandidate = {
+                            voice: v,
+                            distance: h.distance,
+                            point: h.point,
+                            objectData: h.object.userData
+                        };
+                    }
+                    // Stop at the first solid wall/slab along this ray so we don't select through opaque walls
+                    if (!h.object.userData.passThrough && v === 'FOYER_VOID') {
+                        break;
+                    }
+                }
+            }
+            return bestCandidate;
+        }
+
+        function evaluateSpatialZoneAndGaze(dt) {
             const rx = playerFootPos.x;
             const ry = playerFootPos.z;
             const rz = playerFootPos.y;
@@ -1137,26 +1485,18 @@
             document.getElementById('zone-name').innerText = zoneLabel;
 
             const aimCoords = (isPointerLocked || autoRouteActive) ? new THREE.Vector2(0, 0) : mouseNDC;
-            raycaster.setFromCamera(aimCoords, camera);
+            const candidateHit = findBestGazeTarget(aimCoords);
 
-            const hits = raycaster.intersectObjects(raycastMeshes, false);
-            currentGazeHit = null;
-
-            if (hits.length > 0) {
-                let chosenHit = hits[0];
-                for (let i = 0; i < Math.min(hits.length, 4); i++) {
-                    const v = hits[i].object.userData.voice;
-                    if (v && v !== 'CONTEXT_MASS') {
-                        chosenHit = hits[i];
-                        break;
-                    }
-                }
-                currentGazeHit = {
-                    voice: chosenHit.object.userData.voice,
-                    distance: chosenHit.distance,
-                    point: chosenHit.point,
-                    objectData: chosenHit.object.userData
-                };
+            // Smooth 0.28s magnetic hold so panning across thin columns/frames never drops out abruptly
+            if (candidateHit) {
+                currentGazeHit = candidateHit;
+                lastGazeVoice = candidateHit.voice;
+                gazeHoldTimer = 0.28;
+            } else if (gazeHoldTimer > 0 && currentGazeHit) {
+                gazeHoldTimer -= dt;
+            } else {
+                currentGazeHit = null;
+                lastGazeVoice = null;
             }
 
             for (const vk of ACTIVE_VOICE_KEYS) {
@@ -1165,11 +1505,11 @@
 
             if (interactionMode === 'AUTONOMOUS') {
                 if (isOnExteriorStair) {
-                    voiceTargetLevels.EXT_STAIR = isMoving ? 0.88 : 0.48;
+                    voiceTargetLevels.EXT_STAIR = isMoving ? 0.85 : 0.45;
                 }
                 if (isInsideClosedMass) {
                     const foyerDepth = rx >= 46.0 ? Math.min(1.0, (74.22 - rx) / 6.0) : 0.65;
-                    voiceTargetLevels.FOYER_VOID = Math.max(0.35, foyerDepth * 0.92);
+                    voiceTargetLevels.FOYER_VOID = Math.max(0.35, foyerDepth * 0.88);
                 }
             }
 
@@ -1180,32 +1520,26 @@
                 const gv = currentGazeHit.voice;
                 const dist = currentGazeHit.distance;
                 const cfg = VOICE_CONFIG[gv];
-                const maxD = cfg.maxDist || 40.0;
+                const maxD = cfg.maxDist || 48.0;
 
-                if (dist <= maxD) {
-                    const normProximity = Math.max(0.0, Math.min(1.0, 1.0 - (dist - 1.5) / (maxD - 1.5)));
-                    const proximityGain = Math.pow(normProximity, 1.15);
+                const normProximity = Math.max(0.0, Math.min(1.0, 1.0 - (dist - 1.5) / (maxD - 1.5)));
+                const proximityGain = Math.pow(normProximity, 1.05);
 
-                    if (interactionMode === 'AUTONOMOUS') {
-                        voiceTargetLevels[gv] = Math.max(voiceTargetLevels[gv] || 0, Math.max(0.14, proximityGain));
-                    } else {
-                        voiceTargetLevels[gv] = Math.max(0.15, proximityGain * 0.5);
-                    }
-
-                    reticleEl.classList.add('focused');
-                    captionEl.innerText = `${cfg.label} · ${dist.toFixed(1)}m`;
-                    captionEl.classList.add('visible');
-
-                    if (lidarPointsSystem) {
-                        const col = new THREE.Color(cfg.colorHex);
-                        lidarPointsSystem.material.uniforms.uGazePoint.value.copy(currentGazeHit.point);
-                        lidarPointsSystem.material.uniforms.uGazeColor.value.set(col.r, col.g, col.b);
-                        lidarPointsSystem.material.uniforms.uGazeActive.value = 1.0;
-                    }
+                if (interactionMode === 'AUTONOMOUS') {
+                    voiceTargetLevels[gv] = Math.max(voiceTargetLevels[gv] || 0, Math.max(0.18, proximityGain));
                 } else {
-                    reticleEl.classList.remove('focused');
-                    captionEl.classList.remove('visible');
-                    if (lidarPointsSystem) lidarPointsSystem.material.uniforms.uGazeActive.value = 0.0;
+                    voiceTargetLevels[gv] = Math.max(0.18, proximityGain * 0.55);
+                }
+
+                reticleEl.classList.add('focused');
+                captionEl.innerText = `${cfg.label} · ${dist.toFixed(1)}m`;
+                captionEl.classList.add('visible');
+
+                if (lidarPointsSystem) {
+                    const col = new THREE.Color(cfg.colorHex);
+                    lidarPointsSystem.material.uniforms.uGazePoint.value.copy(currentGazeHit.point);
+                    lidarPointsSystem.material.uniforms.uGazeColor.value.set(col.r, col.g, col.b);
+                    lidarPointsSystem.material.uniforms.uGazeActive.value = 1.0;
                 }
             } else {
                 reticleEl.classList.remove('focused');
@@ -1319,7 +1653,7 @@
             if (currentGazeHit && currentGazeHit.voice) {
                 const v = currentGazeHit.voice;
                 const cfg = VOICE_CONFIG[v] || VOICE_CONFIG.CONTEXT_MASS;
-                triggerVoiceStep(v, currentStep, 0.92);
+                triggerVoiceStep(v, currentStep, 0.90);
                 spawnRipple(currentGazeHit.point, cfg.colorHex);
                 if (interactionMode === 'ACTIVE') {
                     sequencerSteps[currentStep].push({
@@ -1339,6 +1673,7 @@
 
             if (k === 'm') setInteractionMode(interactionMode === 'AUTONOMOUS' ? 'ACTIVE' : 'AUTONOMOUS');
             if (k === 'r') toggleGuidedRoute();
+            if (k === 't') toggleVideoSoundtrack();
             if (k === 'v') cycleVisualStyle();
             if (k === 'c') sequencerSteps = Array.from({ length: 16 }, () => []);
             if (['1', '2', '3', '4', '5', '6'].includes(k)) teleportToWaypoint(parseInt(k, 10) - 1);
@@ -1423,7 +1758,7 @@
                     camera.position.set(playerFootPos.x, playerFootPos.y + PLAYER_EYE_HEIGHT + bob, playerFootPos.z);
                 }
 
-                evaluateSpatialZoneAndGaze();
+                evaluateSpatialZoneAndGaze(dt);
                 updateContinuousAudio(dt);
             }
 
