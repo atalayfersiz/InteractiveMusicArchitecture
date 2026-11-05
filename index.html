@@ -318,14 +318,17 @@
             min-width: 780px;
         }
 
-        /* Upper Row of Bottom Dock: Interactive 16-Step Sequencer Bar */
+        /* Upper Row of Bottom Dock: Interactive 16-Step Sequencer Bar (Visible only in User Activates mode) */
         .sequencer-row {
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: space-between;
             padding: 8px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.10);
             gap: 14px;
+        }
+        .sequencer-row.visible-active {
+            display: flex;
         }
 
         .seq-info {
@@ -478,7 +481,7 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="jsg_model_data.js?v=6"></script>
+    <script src="jsg_model_data.js?v=7"></script>
 </head>
 <body>
 
@@ -523,9 +526,9 @@
         <div id="reticle"></div>
         <div id="gaze-caption"></div>
 
-        <!-- Bottom Dock: Interactive 16-Step Sequencer Bar + 7-Voice Pads -->
+        <!-- Bottom Dock: Interactive 16-Step Sequencer Bar (User Activates mode) + 7-Voice Pads -->
         <div class="bottom-dock">
-            <div class="sequencer-row">
+            <div class="sequencer-row" id="sequencer-row">
                 <div class="seq-info">
                     <span id="seq-mode-label">16-STEP SEQUENCER</span>
                     <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
@@ -1239,16 +1242,18 @@
                 const curCell = document.getElementById(`step-${currentStep}`);
                 if (curCell) curCell.classList.add('current');
 
-                // Always play any user-recorded steps on the 16-step sequencer bar!
-                const events = sequencerSteps[currentStep];
-                if (events && events.length > 0) {
-                    events.forEach(ev => {
-                        triggerVoiceStep(ev.voice, currentStep, 0.85);
-                        if (ev.point) spawnRipple(ev.point, VOICE_CONFIG[ev.voice]?.colorHex || 0xe5c378);
-                    });
+                // In Mode 1 ("User Activates"), play user-recorded steps on the 16-step sequencer bar
+                if (interactionMode === 'ACTIVE') {
+                    const events = sequencerSteps[currentStep];
+                    if (events && events.length > 0) {
+                        events.forEach(ev => {
+                            triggerVoiceStep(ev.voice, currentStep, 0.85);
+                            if (ev.point) spawnRipple(ev.point, VOICE_CONFIG[ev.voice]?.colorHex || 0xe5c378);
+                        });
+                    }
                 }
 
-                // In Mode 2 ("Building Speaks"), also trigger autonomous spatial/gaze voices
+                // In Mode 2 ("Building Speaks"), trigger autonomous spatial/gaze voices
                 if (interactionMode === 'AUTONOMOUS') {
                     if (voiceLevels.EXT_STAIR > 0.05) {
                         if (currentStep % 2 === 0) {
@@ -1359,9 +1364,8 @@
         });
 
         const darkOccluderMat = new THREE.MeshBasicMaterial({
-            color: 0x06080d,
-            transparent: true,
-            opacity: 0.72,
+            color: 0x050609,
+            transparent: false,
             depthWrite: true,
             side: THREE.DoubleSide,
             polygonOffset: true,
@@ -1376,11 +1380,13 @@
             const lidarPositions = [];
             const lidarColors = [];
 
+            const UNIFIED_STONE_HEX = 0x8e99aa;
             const voiceMaterials = {};
             Object.keys(VOICE_CONFIG).forEach(vk => {
                 const isGlass = vk === 'ENTRANCE_GLASS' || vk === 'SKYLIGHT_ROOF';
+                const isStoneMass = vk === 'FOYER_VOID' || vk === 'CONTEXT_MASS';
                 voiceMaterials[vk] = new THREE.MeshStandardMaterial({
-                    color: VOICE_CONFIG[vk].colorHex,
+                    color: isStoneMass ? UNIFIED_STONE_HEX : VOICE_CONFIG[vk].colorHex,
                     roughness: isGlass ? 0.12 : 0.72,
                     metalness: vk === 'FOYER_FRAMES' ? 0.65 : 0.10,
                     transparent: isGlass,
@@ -1503,7 +1509,9 @@
                 }
 
                 // High-Density Structured LiDAR Point Cloud Sampling
-                const vCol = new THREE.Color(cfg.colorHex);
+                // Use unified architectural stone base color & density for coplanar stone walls/slabs (FOYER_VOID & CONTEXT_MASS)
+                const isStoneMass = (obj.voice === 'FOYER_VOID' || obj.voice === 'CONTEXT_MASS');
+                const vCol = new THREE.Color(isStoneMass ? UNIFIED_STONE_HEX : cfg.colorHex);
 
                 if (eArr && eArr.length > 0) {
                     const edgeSpacing = (obj.voice === 'EXT_STAIR' || obj.voice === 'INT_STAIR_DOWN' || obj.voice === 'FOYER_FRAMES' || obj.voice === 'EXT_COLUMNS')
@@ -1531,7 +1539,7 @@
                     }
                 }
 
-                const surfaceDensity = obj.voice === 'CONTEXT_MASS' ? 4.0 : 12.0;
+                const surfaceDensity = isStoneMass ? 7.5 : 12.0;
                 for (let fIdx = 0; fIdx < obj.f.length; fIdx += 3) {
                     const i0 = obj.f[fIdx] * 3;
                     const i1 = obj.f[fIdx + 1] * 3;
@@ -1897,6 +1905,10 @@
             interactionMode = mode;
             document.getElementById('btn-mode-auto').classList.toggle('active', mode === 'AUTONOMOUS');
             document.getElementById('btn-mode-act').classList.toggle('active', mode === 'ACTIVE');
+            const seqRow = document.getElementById('sequencer-row');
+            if (seqRow) {
+                seqRow.classList.toggle('visible-active', mode === 'ACTIVE');
+            }
             document.getElementById('seq-mode-label').innerText =
                 mode === 'ACTIVE' ? 'ACTIVE LOOP RECORDER (CLICK 3D OR STEPS)' : '16-STEP SEQUENCER';
         }
