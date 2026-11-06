@@ -481,6 +481,7 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="jsg_audio_data.js?v=2"></script>
     <script src="jsg_model_data.js?v=7"></script>
 </head>
 <body>
@@ -759,6 +760,9 @@
         let delaySendGain = null;
 
         const continuousNodes = {};
+        const abletonVoiceBuffers = {};
+        const abletonLoopSources = {};
+        let hasAbletonAudio = false;
 
         const BPM = 116;
         const STEP_TIME_MS = ((60 / BPM) / 4) * 1000;
@@ -907,8 +911,64 @@
             masterGain.connect(compressor);
             compressor.connect(audioCtx.destination);
 
+            loadAbletonAudioStems();
             setupContinuousVoices();
             startSequencerLoop();
+        }
+
+        function loadAbletonAudioStems() {
+            if (!audioCtx) return;
+            const data = window.JSG_AUDIO_DATA;
+            if (!data || !data.hasAudioStems || !data.audioStemsBase64) return;
+
+            ACTIVE_VOICE_KEYS.forEach(vk => {
+                const b64Url = data.audioStemsBase64[vk];
+                if (!b64Url) return;
+
+                try {
+                    const binaryStr = atob(b64Url.split(',')[1]);
+                    const len = binaryStr.length;
+                    const bytes = new Uint8Array(len);
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryStr.charCodeAt(i);
+                    }
+                    audioCtx.decodeAudioData(bytes.buffer, (decodedBuf) => {
+                        abletonVoiceBuffers[vk] = decodedBuf;
+                        hasAbletonAudio = true;
+                        if (['FOYER_VOID', 'ENTRANCE_GLASS', 'SKYLIGHT_ROOF'].includes(vk)) {
+                            startAbletonLoop(vk);
+                        }
+                    }, (err) => {
+                        console.warn("Ableton audio decode note for", vk, err);
+                    });
+                } catch (e) {
+                    console.warn("Base64 decode note for", vk, e);
+                }
+            });
+        }
+
+        function startAbletonLoop(vk) {
+            if (!audioCtx || !abletonVoiceBuffers[vk] || abletonLoopSources[vk]) return;
+            const buf = abletonVoiceBuffers[vk];
+            const src = audioCtx.createBufferSource();
+            src.buffer = buf;
+            src.loop = true;
+
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.0001;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = vk === 'FOYER_VOID' ? 280 : 950;
+
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+            if (reverbSendGain) gain.connect(reverbSendGain);
+            if (delaySendGain && vk !== 'FOYER_VOID') gain.connect(delaySendGain);
+
+            src.start(0);
+            abletonLoopSources[vk] = { src, gain, filter };
         }
 
         function setupContinuousVoices() {
@@ -1007,20 +1067,33 @@
             );
             const voidDuck = 1.0 - activeGazeMax * 0.45;
 
-            if (continuousNodes.FOYER_VOID) {
+            if (abletonLoopSources.FOYER_VOID) {
+                const lvl = voiceLevels.FOYER_VOID * voidDuck;
+                abletonLoopSources.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.72, now, 0.12);
+                abletonLoopSources.FOYER_VOID.filter.frequency.setTargetAtTime(180 + lvl * 1400, now, 0.15);
+                reverbSendGain.gain.setTargetAtTime(0.35 + voiceLevels.FOYER_VOID * 0.40, now, 0.18);
+            } else if (continuousNodes.FOYER_VOID) {
                 const lvl = voiceLevels.FOYER_VOID * voidDuck;
                 continuousNodes.FOYER_VOID.gain.gain.setTargetAtTime(lvl * 0.52, now, 0.12);
                 continuousNodes.FOYER_VOID.filter.frequency.setTargetAtTime(180 + lvl * 420, now, 0.15);
                 reverbSendGain.gain.setTargetAtTime(0.35 + voiceLevels.FOYER_VOID * 0.40, now, 0.18);
             }
 
-            if (continuousNodes.ENTRANCE_GLASS) {
+            if (abletonLoopSources.ENTRANCE_GLASS) {
+                const lvl = voiceLevels.ENTRANCE_GLASS;
+                abletonLoopSources.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.65, now, 0.08);
+                abletonLoopSources.ENTRANCE_GLASS.filter.frequency.setTargetAtTime(450 + lvl * 2600, now, 0.10);
+            } else if (continuousNodes.ENTRANCE_GLASS) {
                 const lvl = voiceLevels.ENTRANCE_GLASS;
                 continuousNodes.ENTRANCE_GLASS.gain.gain.setTargetAtTime(lvl * 0.44, now, 0.08);
                 continuousNodes.ENTRANCE_GLASS.filter.frequency.setTargetAtTime(420 + lvl * 1450, now, 0.10);
             }
 
-            if (continuousNodes.SKYLIGHT_ROOF) {
+            if (abletonLoopSources.SKYLIGHT_ROOF) {
+                const lvl = voiceLevels.SKYLIGHT_ROOF;
+                abletonLoopSources.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.55, now, 0.08);
+                abletonLoopSources.SKYLIGHT_ROOF.filter.frequency.setTargetAtTime(600 + lvl * 2800, now, 0.10);
+            } else if (continuousNodes.SKYLIGHT_ROOF) {
                 const lvl = voiceLevels.SKYLIGHT_ROOF;
                 continuousNodes.SKYLIGHT_ROOF.gain.gain.setTargetAtTime(lvl * 0.40, now, 0.08);
                 continuousNodes.SKYLIGHT_ROOF.filter.frequency.setTargetAtTime(500 + lvl * 1800, now, 0.10);
@@ -1030,6 +1103,34 @@
         function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
             if (!audioCtx || isMuted || intensity <= 0.02) return;
             const now = audioCtx.currentTime;
+
+            // 1. Primary Ableton Audio Playback (Authentic high-fidelity audio from Ableton Live)
+            if (abletonVoiceBuffers[voiceKey]) {
+                const buf = abletonVoiceBuffers[voiceKey];
+                const src = audioCtx.createBufferSource();
+                src.buffer = buf;
+
+                const stepDur = buf.duration / 16.0;
+                const offset = ((stepIndex || 0) % 16) * stepDur;
+                const playLen = Math.min(buf.duration - offset, Math.max(0.35, stepDur * 2.2));
+
+                const gain = audioCtx.createGain();
+                const peak = Math.min(1.0, intensity * 0.88);
+                gain.gain.setValueAtTime(peak, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + playLen);
+
+                src.connect(gain);
+                gain.connect(masterGain);
+                if (reverbSendGain) gain.connect(reverbSendGain);
+                if (delaySendGain && (voiceKey === 'EXT_COLUMNS' || voiceKey === 'FOYER_FRAMES')) {
+                    gain.connect(delaySendGain);
+                }
+
+                src.start(now, offset, playLen);
+                return;
+            }
+
+            // 2. Synthetic Fallback (Only used if Ableton audio stems are loading)
 
             if (voiceKey === 'EXT_STAIR') {
                 const isKickStep = (stepIndex % 4 === 0);
