@@ -14,7 +14,7 @@ $alsPath = "D:\CODING\InteractiveMusicArchitecture\InteractiveMusicArchitecture_
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "  Interactive Music Architecture — Ableton Live Audio Exporter" -ForegroundColor White
+Write-Host "  Interactive Music Architecture - Ableton Live Audio Exporter" -ForegroundColor White
 Write-Host "======================================================================" -ForegroundColor Cyan
 
 # 1. Check if Ableton Live is running
@@ -39,7 +39,6 @@ if (Test-Path $TargetFile) {
 $wshell = New-Object -ComObject WScript.Shell
 
 Write-Host "[*] Bringing Ableton Live to foreground..." -ForegroundColor Cyan
-# Try window titles and process
 $activated = $wshell.AppActivate("SoundLab") -or $wshell.AppActivate("Ableton Live") -or $wshell.AppActivate("Live") -or $wshell.AppActivate($liveProc.Id)
 
 Start-Sleep -Milliseconds 600
@@ -85,7 +84,6 @@ while ($elapsed -lt $maxWaitSeconds) {
     if (Test-Path $TargetFile) {
         $curItem = Get-Item $TargetFile
         if ($curItem.LastWriteTime -gt $prevModTime) {
-            # Check if file has finished writing and can be read exclusively
             try {
                 $fileStream = [System.IO.File]::Open($TargetFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
                 if ($fileStream.Length -gt 10000) {
@@ -99,11 +97,12 @@ while ($elapsed -lt $maxWaitSeconds) {
             }
         }
     }
-    Write-Host "    Rendering... ($elapsed s)" -ForegroundColor DarkGray
+    Write-Host "    Rendering... ($($elapsed)s)" -ForegroundColor DarkGray
 }
 
 if ($rendered) {
-    Write-Host "[SUCCESS] Ableton exported voices.wav ($([Math]::Round((Get-Item $TargetFile).Length / 1MB, 2)) MB)!" -ForegroundColor Green
+    $sizeMb = [Math]::Round((Get-Item $TargetFile).Length / 1MB, 2)
+    Write-Host "[SUCCESS] Ableton exported voices.wav ($sizeMb MB)!" -ForegroundColor Green
     Write-Host ""
     Write-Host "[*] Slicing stems and syncing with web project..." -ForegroundColor Cyan
     
@@ -121,7 +120,7 @@ if ($rendered) {
     Write-Host "======================================================================" -ForegroundColor Green
 } else {
     Write-Host "[!] Timed out waiting for automatic render." -ForegroundColor Yellow
-    Write-Host "    If Ableton's export dialog is open, simply click 'Save' to save to:" -ForegroundColor White
+    Write-Host "    If Ableton export dialog is open, simply save as:" -ForegroundColor White
     Write-Host "    $TargetFile" -ForegroundColor Cyan
     Write-Host "    Then run import_sounds.bat to sync." -ForegroundColor White
 }
