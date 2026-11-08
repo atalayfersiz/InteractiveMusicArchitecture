@@ -44,9 +44,24 @@ In **Session View**, each track has a 4-bar loop in Clip Slot 1.
 
 ---
 
-## 4. The Efficient "One-File" Export Workflow
+## 4. The 1-Click Export & Sync Batch Script (Recommended)
 
-When you are happy with your sounds:
+Whenever you edit your sounds in Ableton Live:
+
+1. Double-click [`export_audio_from_ableton.bat`](file:///D:/CODING/InteractiveMusicArchitecture/export_audio_from_ableton.bat) *(in the project root)*.
+2. The script will automatically:
+   - Bring Ableton Live to the front.
+   - Trigger `Ctrl + Shift + R` (Export Audio/Video).
+   - Render the master mix directly to [`ableton\voices.wav`](file:///D:/CODING/InteractiveMusicArchitecture/ableton/voices.wav).
+   - Slice all 7 architectural voice stems with click-free loop crossfades.
+   - Update [`web_prototype/audio/`](file:///D:/CODING/InteractiveMusicArchitecture/web_prototype/audio/) and [`jsg_audio_data.js`](file:///D:/CODING/InteractiveMusicArchitecture/web_prototype/jsg_audio_data.js).
+3. Reload your browser (`Ctrl + F5`) at `http://localhost:8080/index.html` to hear your new Ableton sounds live!
+
+---
+
+## 5. Alternative Manual Export (If Preferred)
+
+If you prefer to export manually from Ableton's menu:
 
 1. In Ableton Live, press **`Ctrl + Shift + R`** (or go to `File > Export Audio/Video`).
 2. Set:
@@ -57,27 +72,4 @@ When you are happy with your sounds:
 3. Save the exported file as:
    **`voices.wav`** inside the [`ableton/`](file:///D:/CODING/InteractiveMusicArchitecture/ableton/) folder:
    `D:\CODING\InteractiveMusicArchitecture\ableton\voices.wav`
-
-> **Note:** That's it! You only export **one single file**. You do **not** have to solo tracks or export 7 separate stems.
-
----
-
-## 5. One-Click Import to the Project
-
-To import your updated sounds into the web project:
-
-- **Option A (Double-Click):**
-  Double-click [`import_sounds.bat`](file:///D:/CODING/InteractiveMusicArchitecture/import_sounds.bat) in the project folder.
-
-- **Option B (Command Line):**
-  Run:
-  ```powershell
-  python D:\CODING\InteractiveMusicArchitecture\import_ableton_sounds.py
-  ```
-
-### What Happens Automatically:
-1. Slices the 7 voice stems from your single `voices.wav` at the exact locator timestamps.
-2. Applies smooth micro-crossfades to guarantee click-free seamless audio looping.
-3. Saves individual stems to [`web_prototype/audio/`](file:///D:/CODING/InteractiveMusicArchitecture/web_prototype/audio/).
-4. Encodes them into [`jsg_audio_data.js`](file:///D:/CODING/InteractiveMusicArchitecture/web_prototype/jsg_audio_data.js) for instant, CORS-free playback locally and on GitHub Pages.
-5. Reload your browser (`Ctrl + F5`) at `http://localhost:8080/index.html` to hear your custom sounds live in the 3D space!
+4. Double-click [`import_sounds.bat`](file:///D:/CODING/InteractiveMusicArchitecture/import_sounds.bat) to sync to the web project.
