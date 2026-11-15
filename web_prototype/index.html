@@ -318,17 +318,26 @@
             min-width: 780px;
         }
 
-        /* Upper Row of Bottom Dock: Interactive 16-Step Sequencer Bar (Visible only in User Activates mode) */
+        /* Upper Row of Bottom Dock: 7-Layer Interactive 16-Step Sequencer (Visible only in User Activates mode) */
         .sequencer-row {
             display: none;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 10px 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-            gap: 14px;
+            gap: 6px;
         }
         .sequencer-row.visible-active {
             display: flex;
+        }
+
+        .seq-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 12px;
         }
 
         .seq-info {
@@ -350,25 +359,67 @@
         }
 
         #sequencer-ui {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .seq-layer-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 2px 4px;
+            border-left: 2px solid transparent;
+            transition: background 0.12s ease;
+        }
+        .seq-layer-row.active-layer {
+            background: rgba(255, 255, 255, 0.04);
+            border-left-color: var(--layer-color, var(--accent));
+        }
+
+        .seq-layer-label {
+            width: 74px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .seq-layer-row.active-layer .seq-layer-label,
+        .seq-layer-label:hover {
+            color: #fff;
+        }
+        .seq-layer-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .seq-layer-steps {
             display: grid;
             grid-template-columns: repeat(16, 1fr);
-            gap: 4px;
+            gap: 3px;
             flex: 1;
         }
 
         .step-cell {
-            height: 22px;
+            height: 17px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.16);
             cursor: pointer;
             position: relative;
             transition: all 0.1s ease;
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: center;
-            padding-bottom: 2px;
+            padding-bottom: 1px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 8px;
+            font-size: 7.5px;
             color: rgba(255, 255, 255, 0.28);
         }
         .step-cell:nth-child(4n+1) {
@@ -384,8 +435,8 @@
             color: #fff;
         }
         .step-cell.recorded {
-            background: rgba(229, 195, 120, 0.28);
-            border-color: var(--accent);
+            background: color-mix(in srgb, var(--step-color, var(--accent)) 32%, transparent);
+            border-color: var(--step-color, var(--accent));
             color: #fff;
         }
         .step-cell.recorded::before {
@@ -394,8 +445,22 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 2px;
             background: var(--step-color, var(--accent));
+        }
+
+        .seq-layer-clear {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8.5px;
+            padding: 1px 5px;
+            cursor: pointer;
+        }
+        .seq-layer-clear:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.45);
         }
 
         .seq-actions {
@@ -530,14 +595,16 @@
         <!-- Bottom Dock: Interactive 16-Step Sequencer Bar (User Activates mode) + 7-Voice Pads -->
         <div class="bottom-dock">
             <div class="sequencer-row" id="sequencer-row">
-                <div class="seq-info">
-                    <span id="seq-mode-label">16-STEP SEQUENCER</span>
-                    <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
+                <div class="seq-header">
+                    <div class="seq-info">
+                        <span id="seq-mode-label">16-STEP SEQUENCER</span>
+                        <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
+                    </div>
+                    <div class="seq-actions">
+                        <button class="seq-mini-btn" onclick="clearSequencerLoop()" title="Clear All Layers [C]">Clear All [C]</button>
+                    </div>
                 </div>
                 <div id="sequencer-ui"></div>
-                <div class="seq-actions">
-                    <button class="seq-mini-btn" onclick="clearSequencerLoop()" title="Clear Recorded Loop [C]">Clear [C]</button>
-                </div>
             </div>
 
             <div class="voice-strip-row">
@@ -769,24 +836,58 @@
         let currentStep = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
 
-        // Build 16-step interactive sequencer bar cells in the DOM
+        // Build 7-layer x 16-step interactive sequencer cells in the DOM
         const seqContainer = document.getElementById('sequencer-ui');
-        for (let i = 0; i < 16; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'step-cell';
-            cell.id = `step-${i}`;
-            cell.innerText = (i + 1);
-            cell.title = `Step ${i + 1}: Click to toggle ${selectedSequencerVoice} on this step`;
-            cell.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                initAudioEngine();
-                toggleStepInSequencer(i);
-            });
-            seqContainer.appendChild(cell);
-        }
+        ACTIVE_VOICE_KEYS.forEach((voiceKey, layerIdx) => {
+            const cfg = VOICE_CONFIG[voiceKey] || VOICE_CONFIG.EXT_STAIR;
+            const row = document.createElement('div');
+            row.className = 'seq-layer-row' + (voiceKey === selectedSequencerVoice ? ' active-layer' : '');
+            row.id = `seq-row-${voiceKey}`;
+            row.style.setProperty('--layer-color', cfg.colorCss);
 
-        function selectVoicePad(voiceKey) {
-            initAudioEngine();
+            const label = document.createElement('div');
+            label.className = 'seq-layer-label';
+            label.title = `Select & audition ${cfg.label}`;
+            label.innerHTML = `<span class="seq-layer-dot" style="background:${cfg.colorCss}"></span><span>${layerIdx + 1}.${cfg.shortName}</span>`;
+            label.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                selectVoicePad(voiceKey);
+            });
+
+            const stepsWrap = document.createElement('div');
+            stepsWrap.className = 'seq-layer-steps';
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'step-cell';
+                cell.id = `step-${voiceKey}-${i}`;
+                cell.dataset.step = String(i);
+                cell.dataset.voice = voiceKey;
+                cell.innerText = layerIdx === 0 ? String(i + 1) : '';
+                cell.title = `${layerIdx + 1}.${cfg.shortName} — Step ${i + 1}`;
+                cell.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    initAudioEngine();
+                    toggleStepInSequencer(i, voiceKey);
+                });
+                stepsWrap.appendChild(cell);
+            }
+
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'seq-layer-clear';
+            clearBtn.innerText = '×';
+            clearBtn.title = `Clear ${cfg.shortName} layer`;
+            clearBtn.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                clearVoiceLayer(voiceKey);
+            });
+
+            row.appendChild(label);
+            row.appendChild(stepsWrap);
+            row.appendChild(clearBtn);
+            seqContainer.appendChild(row);
+        });
+
+        function updateActiveVoiceUI(voiceKey) {
             selectedSequencerVoice = voiceKey;
             const cfg = VOICE_CONFIG[voiceKey] || VOICE_CONFIG.EXT_STAIR;
             document.getElementById('seq-selected-voice').innerText = `VOICE: ${cfg.shortName}`;
@@ -796,37 +897,55 @@
             ACTIVE_VOICE_KEYS.forEach(vk => {
                 const pad = document.getElementById(`pad-${vk}`);
                 if (pad) pad.classList.toggle('selected-voice', vk === voiceKey);
+                const layerRow = document.getElementById(`seq-row-${vk}`);
+                if (layerRow) layerRow.classList.toggle('active-layer', vk === voiceKey);
             });
+        }
 
-            // Audition the sound immediately when clicking the voice pad!
+        function selectVoicePad(voiceKey) {
+            initAudioEngine();
+            updateActiveVoiceUI(voiceKey);
+
+            // Audition the sound immediately when clicking the voice pad or layer label!
             triggerVoiceStep(voiceKey, currentStep, 0.90);
         }
 
-        function toggleStepInSequencer(stepIdx) {
+        function toggleStepInSequencer(stepIdx, voiceKey = selectedSequencerVoice) {
+            updateActiveVoiceUI(voiceKey);
             const list = sequencerSteps[stepIdx];
-            const existingIdx = list.findIndex(item => item.voice === selectedSequencerVoice);
+            const existingIdx = list.findIndex(item => item.voice === voiceKey);
             if (existingIdx >= 0) {
                 list.splice(existingIdx, 1);
             } else {
                 const pos = camera.position.clone().add(new THREE.Vector3(0, 0, -4).applyQuaternion(camera.quaternion));
-                list.push({ voice: selectedSequencerVoice, point: pos });
-                triggerVoiceStep(selectedSequencerVoice, stepIdx, 0.90);
+                list.push({ voice: voiceKey, point: pos });
+                triggerVoiceStep(voiceKey, stepIdx, 0.90);
             }
-            refreshSequencerStepUI(stepIdx);
+            refreshSequencerStepUI(stepIdx, voiceKey);
         }
 
-        function refreshSequencerStepUI(stepIdx) {
-            const cell = document.getElementById(`step-${stepIdx}`);
-            if (!cell) return;
-            const list = sequencerSteps[stepIdx];
-            if (list && list.length > 0) {
-                cell.classList.add('recorded');
-                const lastVoice = list[list.length - 1].voice;
-                const cfg = VOICE_CONFIG[lastVoice] || VOICE_CONFIG.EXT_STAIR;
-                cell.style.setProperty('--step-color', cfg.colorCss);
-            } else {
-                cell.classList.remove('recorded');
-                cell.style.removeProperty('--step-color');
+        function refreshSequencerStepUI(stepIdx, voiceKey = null) {
+            const list = sequencerSteps[stepIdx] || [];
+            const keysToUpdate = voiceKey ? [voiceKey] : ACTIVE_VOICE_KEYS;
+            keysToUpdate.forEach(vk => {
+                const cell = document.getElementById(`step-${vk}-${stepIdx}`);
+                if (!cell) return;
+                const hasVoice = list.some(item => item.voice === vk);
+                if (hasVoice) {
+                    const cfg = VOICE_CONFIG[vk] || VOICE_CONFIG.EXT_STAIR;
+                    cell.classList.add('recorded');
+                    cell.style.setProperty('--step-color', cfg.colorCss);
+                } else {
+                    cell.classList.remove('recorded');
+                    cell.style.removeProperty('--step-color');
+                }
+            });
+        }
+
+        function clearVoiceLayer(voiceKey) {
+            for (let i = 0; i < 16; i++) {
+                sequencerSteps[i] = sequencerSteps[i].filter(item => item.voice !== voiceKey);
+                refreshSequencerStepUI(i, voiceKey);
             }
         }
 
@@ -1338,10 +1457,9 @@
             setInterval(() => {
                 if (!isRunning) return;
 
-                // Update 16-step playhead UI
-                document.querySelectorAll('.step-cell').forEach(c => c.classList.remove('current'));
-                const curCell = document.getElementById(`step-${currentStep}`);
-                if (curCell) curCell.classList.add('current');
+                // Update 16-step vertical playhead across all 7 element layers
+                document.querySelectorAll('.step-cell.current').forEach(c => c.classList.remove('current'));
+                document.querySelectorAll(`.step-cell[data-step="${currentStep}"]`).forEach(c => c.classList.add('current'));
 
                 // In Mode 1 ("User Activates"), play user-recorded steps on the 16-step sequencer bar
                 if (interactionMode === 'ACTIVE') {
@@ -2110,12 +2228,18 @@
                 }
                 spawnRipple(currentGazeHit.point, cfg.colorHex);
 
-                if (interactionMode === 'ACTIVE') {
-                    sequencerSteps[currentStep].push({
-                        voice: v,
-                        point: currentGazeHit.point.clone()
-                    });
-                    refreshSequencerStepUI(currentStep);
+                if (interactionMode === 'ACTIVE' && ACTIVE_VOICE_KEYS.includes(v)) {
+                    const stepList = sequencerSteps[currentStep];
+                    const existing = stepList.find(item => item.voice === v);
+                    if (existing) {
+                        existing.point = currentGazeHit.point.clone();
+                    } else {
+                        stepList.push({
+                            voice: v,
+                            point: currentGazeHit.point.clone()
+                        });
+                    }
+                    refreshSequencerStepUI(currentStep, v);
                 }
             }
         });
