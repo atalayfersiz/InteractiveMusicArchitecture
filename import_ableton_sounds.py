@@ -132,13 +132,17 @@ def main():
         else:
             audio_f = master_data.astype(np.float32) / np.max(np.abs(master_data))
 
-        # 7 equal sections (16 beats / 4 bars each in the 28-bar timeline)
+        # 7 sequential sections (16 beats / 4 bars each @ 116 BPM in the 28-bar timeline).
+        # Slice strictly by beat duration so any LMMS release/reverb tail after bar 28
+        # never shifts stem boundaries.
+        bpm = 116.0
+        beats_per_elem = 16.0
+        samples_per_elem = int(round(beats_per_elem * (60.0 / bpm) * sr))
         n_elements = len(VOICE_KEYS)
-        samples_per_elem = len(audio_f) // n_elements
 
         for idx, vk in enumerate(VOICE_KEYS):
             s_start = idx * samples_per_elem
-            s_end = (idx + 1) * samples_per_elem if idx < n_elements - 1 else len(audio_f)
+            s_end = min(len(audio_f), (idx + 1) * samples_per_elem)
             slice_data = audio_f[s_start:s_end]
             cf_data = apply_loop_crossfade(slice_data, crossfade_len=int(sr * 0.015))
             stems_dict[vk] = (sr, cf_data)
