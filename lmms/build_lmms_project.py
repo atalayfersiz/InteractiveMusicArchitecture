@@ -1,27 +1,130 @@
 """
-Build single-file LMMS project (InteractiveMusicArchitecture_SoundLab.mmp)
+Build self-contained single-file LMMS project (lmms/InteractiveMusicArchitecture_SoundLab.mmp)
 containing all 7 architectural sound voices for the James-Simon-Galerie.
 
-Reads exact MIDI clip timing and notes from
-ableton_project/InteractiveMusicArchitecture_SoundLab.als (Arrangement clips)
-so all 7 tracks sit sequentially on bars 1-28 (16 beats = 4 bars each @ 116 BPM)
-for headless CLI rendering and beat-accurate stem slicing.
+Zero external DAW dependencies: all 7 MIDI patterns and TripleOscillator/ADSR
+synth definitions live directly in this script and arrange sequentially across
+bars 1-28 (16 beats = 4 bars each @ 116 BPM) for headless CLI rendering.
 """
 
-import gzip
 import os
 import shutil
 import xml.etree.ElementTree as ET
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-ALS_PATH = os.path.join(ROOT_DIR, "ableton_project", "InteractiveMusicArchitecture_SoundLab.als")
-MMP_PATH = os.path.join(ROOT_DIR, "InteractiveMusicArchitecture_SoundLab.mmp")
-THESIS_MMP_PATH = os.path.join(r"D:\CODING\Thesis", "InteractiveMusicArchitecture_SoundLab.mmp")
+LMMS_DIR = os.path.dirname(os.path.abspath(__file__))
+MMP_PATH = os.path.join(LMMS_DIR, "InteractiveMusicArchitecture_SoundLab.mmp")
+THESIS_MMP_PATH = r"D:\CODING\Thesis\lmms\InteractiveMusicArchitecture_SoundLab.mmp"
 
 BPM = 116
 TICKS_PER_BEAT = 48
 BEATS_PER_ELEMENT = 16
 TICKS_PER_ELEMENT = BEATS_PER_ELEMENT * TICKS_PER_BEAT  # 768 ticks (4 bars)
+
+# Exact 4-bar architectural patterns (beat_time, midi_note, duration_beats, velocity)
+ARCHITECTURAL_TRACKS = [
+    (
+        "01_EXT_STAIR",
+        [
+            note
+            for bar in range(4)
+            for b, k, d, v in [
+                (0.0, 24, 1.5, 110),
+                (0.0, 36, 0.45, 108),
+                (0.5, 43, 0.4, 92),
+                (1.0, 48, 0.45, 102),
+                (1.5, 36, 0.4, 90),
+                (2.0, 51, 0.45, 104),
+                (2.5, 43, 0.4, 92),
+                (3.0, 50, 0.45, 100),
+                (3.5, 43, 0.4, 90),
+            ]
+            for note in [(bar * 4.0 + b, k, d, v)]
+        ],
+    ),
+    (
+        "02_EXT_COLUMNS",
+        [
+            (bar * 4.0 + b, k, 0.22, v)
+            for bar in range(4)
+            for b, k, v in [
+                (0.0, 60, 98),
+                (0.5, 62, 95),
+                (1.25, 63, 95),
+                (1.75, 67, 95),
+                (2.0, 70, 95),
+                (2.5, 74, 95),
+                (3.25, 72, 95),
+                (3.5, 67, 95),
+            ]
+        ],
+    ),
+    (
+        "03_ENTRANCE_GLASS",
+        [
+            (0.0, 63, 16.0, 88),
+            (0.0, 67, 16.0, 86),
+            (0.0, 70, 16.0, 84),
+            (0.0, 72, 3.5, 80),
+            (0.0, 74, 16.0, 82),
+            (0.0, 77, 16.0, 78),
+            (4.0, 75, 3.5, 80),
+            (8.0, 79, 3.5, 80),
+            (12.0, 82, 3.5, 80),
+        ],
+    ),
+    (
+        "04_FOYER_VOID",
+        [
+            (0.0, 36, 16.0, 96),
+            (0.0, 43, 16.0, 92),
+            (0.0, 48, 16.0, 88),
+            (0.0, 51, 16.0, 84),
+            (0.0, 55, 16.0, 82),
+            (0.0, 62, 16.0, 78),
+        ],
+    ),
+    (
+        "05_FOYER_FRAMES",
+        [
+            (bar * 4.0 + b, k, 0.2, 100)
+            for bar in range(4)
+            for b, k in [
+                (0.0, 55),
+                (0.75, 58),
+                (1.5, 60),
+                (2.25, 62),
+                (3.0, 63),
+                (3.5, 65),
+                (3.75, 67),
+            ]
+        ],
+    ),
+    (
+        "06_INT_STAIR_DOWN",
+        [
+            (half * 8.0 + i * 0.5, k, 0.42, 94)
+            for half in range(2)
+            for i, k in enumerate([79, 77, 75, 74, 72, 70, 67, 65, 63, 62, 60, 58, 55, 53, 51, 48])
+        ],
+    ),
+    (
+        "07_SKYLIGHT_ROOF",
+        [
+            (0.0, 67, 8.0, 74),
+            (0.0, 70, 8.0, 74),
+            (0.0, 79, 1.8, 86),
+            (2.0, 82, 1.8, 86),
+            (4.0, 84, 1.8, 88),
+            (6.0, 86, 1.8, 88),
+            (8.0, 74, 8.0, 74),
+            (8.0, 79, 1.8, 86),
+            (8.0, 79, 8.0, 74),
+            (10.0, 82, 1.8, 86),
+            (12.0, 84, 1.8, 88),
+            (14.0, 86, 1.8, 88),
+        ],
+    ),
+]
 
 # Distinct tripleoscillator + filter + ADSR voices per architectural element
 VOICE_PATCHES = {
@@ -98,30 +201,6 @@ VOICE_PATCHES = {
 }
 
 
-def load_als_tracks(als_path):
-    """Extract ordered (track_name, [(time_beats, midi_key, dur_beats, vel), ...]) from ALS."""
-    with gzip.open(als_path, "rb") as f:
-        root = ET.parse(f).getroot()
-
-    tracks = []
-    for mt in root.findall(".//MidiTrack"):
-        name_el = mt.find("./Name/EffectiveName")
-        tname = name_el.attrib.get("Value") if name_el is not None else f"Track_{len(tracks)+1}"
-        clip = mt.find(".//ArrangerAutomation/Events/MidiClip")
-        notes = []
-        if clip is not None:
-            for kt in clip.findall(".//KeyTrack"):
-                key = int(kt.find("./MidiKey").attrib["Value"])
-                for mn in kt.findall("./Notes/MidiNoteEvent"):
-                    t = float(mn.attrib["Time"])
-                    d = float(mn.attrib["Duration"])
-                    v = int(float(mn.attrib["Velocity"]))
-                    notes.append((t, key, d, v))
-        notes.sort()
-        tracks.append((tname, notes))
-    return tracks
-
-
 def make_env_sub(tag, amt=0, att=0.0, hold=0.0, dec=0.5, sustain=0.5, rel=0.1):
     """Create <elvol>, <elcut>, or <elres> element matching LMMS 1.2.2."""
     return ET.Element(
@@ -151,7 +230,7 @@ def make_env_sub(tag, amt=0, att=0.0, hold=0.0, dec=0.5, sustain=0.5, rel=0.1):
 
 def build_track_xml(idx, track_name, notes):
     """Build a single LMMS <track type='0'> element with instrument and 4-bar pattern."""
-    patch = VOICE_PATCHES.get(track_name, VOICE_PATCHES["01_EXT_STAIR"])
+    patch = VOICE_PATCHES[track_name]
     osc_cfg = patch["osc"]
     env_cfg = patch["env"]
 
@@ -246,7 +325,6 @@ def build_track_xml(idx, track_name, notes):
     for beat_t, midi_key, dur_b, vel in notes:
         pos_ticks = max(0, int(round(beat_t * TICKS_PER_BEAT)))
         len_ticks = max(6, int(round(dur_b * TICKS_PER_BEAT)))
-        # Clamp inside the 4-bar slot so sustained notes release smoothly before the next voice
         if pos_ticks + len_ticks > TICKS_PER_ELEMENT - 4:
             len_ticks = max(6, (TICKS_PER_ELEMENT - 4) - pos_ticks)
         # LMMS basenote=57 equals MIDI 69 (A4 = 440 Hz), so lmms_key = midi_key - 12
@@ -268,8 +346,7 @@ def build_track_xml(idx, track_name, notes):
 
 
 def build_lmms_project():
-    tracks = load_als_tracks(ALS_PATH)
-    total_ticks = len(tracks) * TICKS_PER_ELEMENT
+    total_ticks = len(ARCHITECTURAL_TRACKS) * TICKS_PER_ELEMENT
 
     root = ET.Element(
         "lmms-project",
@@ -302,7 +379,7 @@ def build_lmms_project():
         },
     )
 
-    for idx, (tname, notes) in enumerate(tracks):
+    for idx, (tname, notes) in enumerate(ARCHITECTURAL_TRACKS):
         tc.append(build_track_xml(idx, tname, notes))
         print(f"  + Added LMMS track {idx+1}/7: {tname:18s} ({len(notes)} notes @ bar {idx*4+1})")
 
@@ -334,11 +411,14 @@ def build_lmms_project():
     xml_body = ET.tostring(root, encoding="unicode")
     full_xml = '<?xml version="1.0"?>\n<!DOCTYPE lmms-project>\n' + xml_body + "\n"
 
+    os.makedirs(LMMS_DIR, exist_ok=True)
     with open(MMP_PATH, "w", encoding="utf-8", newline="\n") as f:
         f.write(full_xml)
     print(f"[SUCCESS] Wrote {MMP_PATH}")
 
-    if os.path.isdir(os.path.dirname(THESIS_MMP_PATH)):
+    thesis_dir = os.path.dirname(THESIS_MMP_PATH)
+    if os.path.isdir(os.path.dirname(thesis_dir)) and os.path.abspath(MMP_PATH) != os.path.abspath(THESIS_MMP_PATH):
+        os.makedirs(thesis_dir, exist_ok=True)
         shutil.copy2(MMP_PATH, THESIS_MMP_PATH)
         print(f"[SUCCESS] Copied to {THESIS_MMP_PATH}")
 

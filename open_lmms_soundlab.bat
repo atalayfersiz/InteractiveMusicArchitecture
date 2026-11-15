@@ -13,5 +13,5 @@ if not defined LMMS_EXE (
     exit /b 1
 )
 
-echo Launching LMMS with InteractiveMusicArchitecture_SoundLab.mmp...
-start "" "%LMMS_EXE%" "%~dp0InteractiveMusicArchitecture_SoundLab.mmp"
+echo Launching LMMS with lmms\InteractiveMusicArchitecture_SoundLab.mmp...
+start "" "%LMMS_EXE%" "%~dp0lmms\InteractiveMusicArchitecture_SoundLab.mmp"

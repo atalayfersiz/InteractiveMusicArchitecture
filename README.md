@@ -1,6 +1,6 @@
 # Interactive Music Architecture — Project Hub
 
-Welcome to the **Interactive Music Architecture** digital prototype workspace, inspired by DAO's *Wake · 森* audiovisual sequencer.
+Digital prototype workspace for the **Interactive Music Architecture (James-Simon-Galerie)** audiovisual sequencer.
 
 ---
 
@@ -8,34 +8,31 @@ Welcome to the **Interactive Music Architecture** digital prototype workspace, i
 
 ```
 d:\CODING\InteractiveMusicArchitecture\
+├── open_lmms_soundlab.bat              <-- [1] Launch LMMS with all 7 architectural tracks
+├── export_audio_from_lmms.bat          <-- [2] Headless LMMS render -> stem slice -> web sync
+├── lmms\
+│   ├── InteractiveMusicArchitecture_SoundLab.mmp   <-- Single-file 7-track LMMS project
+│   ├── export_and_sync_lmms.py                     <-- CLI render + beat-accurate stem slicer
+│   ├── build_lmms_project.py                       <-- Generator / reset script for .mmp
+│   └── voices.wav                                  <-- Rendered 28-bar master WAV (44.1 kHz)
 ├── web_prototype\
-│   └── index.html               <-- Fully playable, zero-install 3D point cloud sequencer
+│   ├── index.html                      <-- Playable 3D architectural sequencer
+│   ├── audio\                          <-- Sliced 7 architectural stem loops (*.wav)
+│   ├── jsg_audio_data.js               <-- Base64 WAV stems embedded for zero-CORS playback
+│   └── jsg_model_data.js               <-- Exported architectural geometry
 ├── rhino_assets\
-│   └── generate_test_track.py   <-- Rhino Python script generating the 3-Zone geometry
+│   ├── InteractiveMusicArchitecture_Master.3dm
+│   └── sync_rhino_to_web.py            <-- Syncs Rhino 3D geometry to web_prototype
 ├── osc_server\
-│   └── osc_bridge.py            <-- Python OSC UDP relay for Ableton / Max / REAPER
+│   └── osc_bridge.py                   <-- Python OSC UDP bridge
 └── ue5_specs\
-    └── UE5_SEQUENCER_SPEC.md    <-- Native Unreal Engine 5.8 Blueprint & Niagara specification
+    └── UE5_SEQUENCER_SPEC.md           <-- Native Unreal Engine 5.8 Blueprint & Niagara spec
 ```
 
 ---
 
-## 1. Quick Test (Interactive Web Prototype)
-You can test the entire experience immediately in your browser:
-* Double click `d:\CODING\InteractiveMusicArchitecture\web_prototype\index.html` to open it in Chrome / Edge.
-* Click to capture mouse pointer lock.
-* Use **WASD** to walk through the Void, Colonnade, and Niche.
-* Aim the reticle at any floor, column, ceiling, or niche wall and **Left Click** to capture its sound into the continuous **16-step sequencer**.
-* Watch the beat loop continuously and build your architectural track!
-
----
-
-## 2. Rhino 3D Modeling Asset
-* Located in `rhino_assets\generate_test_track.py`.
-* Sets units to Centimeters (1 unit = 1 cm).
-* Generates all 3 architectural zones with exact Datasmith naming conventions (`SM_Macro_*`, `SM_Meso_*`, `SM_Micro_*`).
-
----
-
-## 3. UE5.8 & OSC Production Setup
-* When ready to bring it into your native Unreal Engine 5.8 project, refer to `ue5_specs\UE5_SEQUENCER_SPEC.md` for Niagara particle reproduction and Blueprint OSC nodes.
+## Sound Editing Workflow (LMMS)
+1. Double-click **`open_lmms_soundlab.bat`** to open `lmms\InteractiveMusicArchitecture_SoundLab.mmp` in LMMS.
+2. Edit any synth patch, effects, or MIDI notes across the 7 tracks (`01_EXT_STAIR` through `07_SKYLIGHT_ROOF`), then save (`Ctrl+S`).
+3. Double-click **`export_audio_from_lmms.bat`** to headlessly render `lmms\voices.wav`, slice all 7 loops at exact 16-beat boundaries (`116 BPM`), and update `web_prototype\audio\` and `jsg_audio_data.js`.
+4. Reload `web_prototype\index.html` (or push for GitHub Pages) to hear your new sounds immediately.
