@@ -604,9 +604,101 @@
             color: #fff;
             border-color: var(--accent);
         }
+        .seq-mini-btn.active-toggle {
+            border-color: rgba(114, 239, 221, 0.55);
+            color: #72efdd;
+        }
         .seq-mini-btn:disabled {
             opacity: 0.55;
             cursor: wait;
+        }
+
+        /* Beginner-Friendly Per-Element Sound Shaper Strip (Sampler / Envelope / FX) */
+        .seq-shaper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 7px 8px 3px;
+            margin-top: 2px;
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            background: rgba(255, 255, 255, 0.015);
+        }
+        .seq-shaper.collapsed {
+            display: none;
+        }
+        .shaper-voice-box {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 112px;
+        }
+        .shaper-voice-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            letter-spacing: 0.8px;
+            color: #fff;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .shaper-voice-btns {
+            display: flex;
+            gap: 4px;
+        }
+        .shaper-mini-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            padding: 2px 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .shaper-mini-btn:hover {
+            color: #fff;
+            border-color: #fff;
+        }
+        .shaper-groups {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            gap: 12px;
+            flex: 1;
+        }
+        .shaper-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding-left: 12px;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .shaper-group-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.5px;
+            letter-spacing: 0.9px;
+            color: rgba(255, 255, 255, 0.44);
+            text-transform: uppercase;
+        }
+        .shaper-knobs-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .knob-wrap.knob-vertical {
+            flex-direction: column;
+            gap: 2px;
+            min-width: 40px;
+            text-align: center;
+        }
+        .knob-wrap.knob-vertical .knob-val {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.72);
+            min-width: 38px;
         }
 
         /* Lower Row of Bottom Dock: Interactive 7-Voice Trigger Pads & Live Meters */
@@ -734,11 +826,13 @@
                             <option value="2" selected>2 Loops</option>
                             <option value="4">4 Loops</option>
                         </select>
+                        <button class="seq-mini-btn active-toggle" id="btn-toggle-shaper" onclick="toggleSoundShaper()" title="Show / Hide Sound Shaper Controls">Sound FX</button>
                         <button class="seq-mini-btn export-btn" id="btn-export-wav" onclick="exportSequencerAudio()" title="Render & Save Sequencer Audio as WAV">Export WAV</button>
                         <button class="seq-mini-btn" onclick="clearSequencerLoop()" title="Clear All Layers [C]">Clear All [C]</button>
                     </div>
                 </div>
                 <div id="sequencer-ui"></div>
+                <div class="seq-shaper" id="seq-sound-shaper" onmousedown="event.stopPropagation()"></div>
             </div>
 
             <div class="voice-strip-row">
@@ -971,10 +1065,28 @@
         let currentStep = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
 
+        function createDefaultLayerMix(vk) {
+            return {
+                vol: 0.85,
+                pan: 0.0,
+                filter: 1.0,
+                muted: false,
+                trimStart: 0.0,
+                length: 1.0,
+                pitch: 0,
+                attack: 0.006,
+                sustain: 0.70,
+                reverb: vk === 'EXT_STAIR' ? 0.15 : 0.55,
+                delay: (vk === 'EXT_COLUMNS' || vk === 'FOYER_FRAMES') ? 0.45 : ((vk === 'EXT_STAIR' || vk === 'FOYER_VOID') ? 0.0 : 0.25)
+            };
+        }
+
         const masterMix = { volume: 0.80, reverb: 0.42, delay: 0.25 };
         const layerMix = {};
+        const layerRowControls = {};
+        const shaperControls = {};
         ACTIVE_VOICE_KEYS.forEach(vk => {
-            layerMix[vk] = { vol: 0.85, pan: 0.0, filter: 1.0, muted: false };
+            layerMix[vk] = createDefaultLayerMix(vk);
         });
 
         function formatFilterHz(norm) {
@@ -988,10 +1100,10 @@
             return pan < 0 ? `L${pct}` : `R${pct}`;
         }
 
-        function createRotaryKnob({ label, min = 0, max = 1, defaultValue = 0.8, color = '#e5c378', isMaster = false, showValue = false, formatValue = null, onChange }) {
+        function createRotaryKnob({ label, min = 0, max = 1, step = 0, defaultValue = 0.8, color = '#e5c378', isMaster = false, showValue = false, layout = 'inline', formatValue = null, onChange }) {
             let value = defaultValue;
             const wrap = document.createElement('div');
-            wrap.className = 'knob-wrap';
+            wrap.className = 'knob-wrap' + (layout === 'vertical' ? ' knob-vertical' : '');
             wrap.style.setProperty('--knob-color', color);
 
             if (label) {
@@ -1002,14 +1114,14 @@
             }
 
             const knob = document.createElement('div');
-            knob.className = 'rotary-knob' + (isMaster ? ' master-knob' : '');
+            knob.className = 'rotary-knob' + ((isMaster || layout === 'vertical') ? ' master-knob' : '');
             const dial = document.createElement('div');
             dial.className = 'rotary-knob-dial';
             knob.appendChild(dial);
             wrap.appendChild(knob);
 
             let valEl = null;
-            if (showValue) {
+            if (showValue || layout === 'vertical') {
                 valEl = document.createElement('span');
                 valEl.className = 'knob-val';
                 wrap.appendChild(valEl);
@@ -1024,11 +1136,16 @@
                 if (valEl) valEl.innerText = text;
             };
 
-            const setValue = (nextVal) => {
-                value = Math.max(min, Math.min(max, nextVal));
+            const setValue = (nextVal, emit = true) => {
+                let clamped = Math.max(min, Math.min(max, nextVal));
+                if (step > 0) clamped = Math.round(clamped / step) * step;
+                value = Math.max(min, Math.min(max, clamped));
                 syncKnobUI();
-                if (onChange) onChange(value);
+                if (emit && onChange) onChange(value);
             };
+
+            wrap.setKnobValue = (nextVal, emit = false) => setValue(nextVal, emit);
+            wrap.setKnobColor = (nextColor) => wrap.style.setProperty('--knob-color', nextColor);
 
             syncKnobUI();
 
@@ -1056,8 +1173,8 @@
             knob.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const step = (max - min) * 0.05;
-                setValue(value + (e.deltaY < 0 ? step : -step));
+                const wheelStep = step > 0 ? step : (max - min) * 0.05;
+                setValue(value + (e.deltaY < 0 ? wheelStep : -wheelStep));
             }, { passive: false });
 
             knob.addEventListener('dblclick', (e) => {
@@ -1176,8 +1293,14 @@
                 defaultValue: mix.filter,
                 color: cfg.colorCss,
                 formatValue: (v) => `${formatFilterHz(v)}Hz`,
-                onChange: (v) => { mix.filter = v; }
+                onChange: (v) => {
+                    mix.filter = v;
+                    if (voiceKey === selectedSequencerVoice && shaperControls.filter) {
+                        shaperControls.filter.setKnobValue(v, false);
+                    }
+                }
             });
+            layerRowControls[voiceKey] = { fltKnob };
 
             mixStrip.appendChild(muteBtn);
             mixStrip.appendChild(volKnob);
@@ -1218,6 +1341,136 @@
             seqContainer.appendChild(row);
         });
 
+        // Build Beginner-Friendly Sound Shaper Strip below the 7 sequencer rows
+        function initSoundShaperUI() {
+            const root = document.getElementById('seq-sound-shaper');
+            if (!root) return;
+
+            const voiceBox = document.createElement('div');
+            voiceBox.className = 'shaper-voice-box';
+            voiceBox.innerHTML = `
+                <div class="shaper-voice-title">
+                    <span class="seq-layer-dot" id="shaper-dot"></span>
+                    <span id="shaper-voice-name">SHAPE: STAIR</span>
+                </div>
+                <div class="shaper-voice-btns">
+                    <button class="shaper-mini-btn" id="btn-shaper-test" title="Play selected sound with current shaping">Test</button>
+                    <button class="shaper-mini-btn" id="btn-shaper-reset" title="Reset sound shaping for this element">Reset</button>
+                </div>
+            `;
+
+            const groupsWrap = document.createElement('div');
+            groupsWrap.className = 'shaper-groups';
+
+            const makeGroup = (titleText, specs) => {
+                const grp = document.createElement('div');
+                grp.className = 'shaper-group';
+                const ttl = document.createElement('div');
+                ttl.className = 'shaper-group-title';
+                ttl.innerText = titleText;
+                const row = document.createElement('div');
+                row.className = 'shaper-knobs-row';
+
+                specs.forEach(sp => {
+                    const knobEl = createRotaryKnob({
+                        label: sp.label,
+                        min: sp.min,
+                        max: sp.max,
+                        step: sp.step || 0,
+                        defaultValue: sp.defaultValue,
+                        layout: 'vertical',
+                        formatValue: sp.formatValue,
+                        onChange: (val) => {
+                            const mix = layerMix[selectedSequencerVoice];
+                            if (!mix) return;
+                            mix[sp.key] = val;
+                            if (sp.key === 'filter' && layerRowControls[selectedSequencerVoice]?.fltKnob) {
+                                layerRowControls[selectedSequencerVoice].fltKnob.setKnobValue(val, false);
+                            }
+                        }
+                    });
+                    shaperControls[sp.key] = knobEl;
+                    row.appendChild(knobEl);
+                });
+
+                grp.appendChild(ttl);
+                grp.appendChild(row);
+                return grp;
+            };
+
+            groupsWrap.appendChild(makeGroup('TRIM & PITCH', [
+                { key: 'trimStart', label: 'Start', min: 0, max: 0.75, defaultValue: 0.0, formatValue: (v) => `${Math.round(v * 100)}%` },
+                { key: 'length', label: 'Length', min: 0.15, max: 1.0, defaultValue: 1.0, formatValue: (v) => `${Math.round(v * 100)}%` },
+                { key: 'pitch', label: 'Pitch', min: -12, max: 12, step: 1, defaultValue: 0, formatValue: (v) => `${v > 0 ? '+' : ''}${Math.round(v)}st` },
+            ]));
+
+            groupsWrap.appendChild(makeGroup('ENVELOPE', [
+                { key: 'attack', label: 'Attack', min: 0.002, max: 0.35, defaultValue: 0.006, formatValue: (v) => `${Math.round(v * 1000)}ms` },
+                { key: 'sustain', label: 'Sustain', min: 0.10, max: 1.0, defaultValue: 0.70, formatValue: (v) => `${Math.round(v * 100)}%` },
+            ]));
+
+            groupsWrap.appendChild(makeGroup('TONE & SPACE', [
+                { key: 'filter', label: 'Filter', min: 0, max: 1, defaultValue: 1.0, formatValue: (v) => `${formatFilterHz(v)}Hz` },
+                { key: 'reverb', label: 'Reverb', min: 0, max: 1, defaultValue: 0.55, formatValue: (v) => `${Math.round(v * 100)}%` },
+                { key: 'delay', label: 'Delay', min: 0, max: 1, defaultValue: 0.25, formatValue: (v) => `${Math.round(v * 100)}%` },
+            ]));
+
+            root.appendChild(voiceBox);
+            root.appendChild(groupsWrap);
+
+            document.getElementById('btn-shaper-test').addEventListener('click', () => {
+                initAudioEngine();
+                triggerVoiceStep(selectedSequencerVoice, currentStep, 0.90, false);
+            });
+            document.getElementById('btn-shaper-reset').addEventListener('click', resetSelectedLayerSound);
+
+            syncSoundShaperUI(selectedSequencerVoice);
+        }
+
+        function syncSoundShaperUI(voiceKey = selectedSequencerVoice) {
+            const cfg = VOICE_CONFIG[voiceKey] || VOICE_CONFIG.EXT_STAIR;
+            const mix = layerMix[voiceKey];
+            if (!mix) return;
+
+            const dotEl = document.getElementById('shaper-dot');
+            const nameEl = document.getElementById('shaper-voice-name');
+            if (dotEl) dotEl.style.background = cfg.colorCss;
+            if (nameEl) {
+                nameEl.innerText = `SHAPE: ${cfg.shortName}`;
+                nameEl.style.color = cfg.colorCss;
+            }
+
+            Object.entries(shaperControls).forEach(([key, ctrl]) => {
+                if (ctrl.setKnobColor) ctrl.setKnobColor(cfg.colorCss);
+                if (ctrl.setKnobValue && key in mix) ctrl.setKnobValue(mix[key], false);
+            });
+        }
+
+        function toggleSoundShaper() {
+            const el = document.getElementById('seq-sound-shaper');
+            const btn = document.getElementById('btn-toggle-shaper');
+            if (!el) return;
+            const isCollapsed = el.classList.toggle('collapsed');
+            if (btn) btn.classList.toggle('active-toggle', !isCollapsed);
+        }
+
+        function resetSelectedLayerSound() {
+            const vk = selectedSequencerVoice;
+            const defaults = createDefaultLayerMix(vk);
+            const mix = layerMix[vk];
+            ['trimStart', 'length', 'pitch', 'attack', 'sustain', 'filter', 'reverb', 'delay'].forEach(k => {
+                mix[k] = defaults[k];
+            });
+            if (layerRowControls[vk]?.fltKnob) {
+                layerRowControls[vk].fltKnob.setKnobValue(mix.filter, false);
+            }
+            syncSoundShaperUI(vk);
+            initAudioEngine();
+            triggerVoiceStep(vk, currentStep, 0.90, false);
+        }
+
+        initSoundShaperUI();
+
         function updateActiveVoiceUI(voiceKey) {
             selectedSequencerVoice = voiceKey;
             const cfg = VOICE_CONFIG[voiceKey] || VOICE_CONFIG.EXT_STAIR;
@@ -1231,6 +1484,8 @@
                 const layerRow = document.getElementById(`seq-row-${vk}`);
                 if (layerRow) layerRow.classList.toggle('active-layer', vk === voiceKey);
             });
+
+            syncSoundShaperUI(voiceKey);
         }
 
         function selectVoicePad(voiceKey) {
@@ -1596,84 +1851,109 @@
             );
         }
 
+        function applyShapedEnvelope(gainParam, now, baseDur, peak, minAttack = 0.004, mix = null) {
+            const lenScale = mix ? Math.max(0.15, Math.min(1.0, mix.length || 1.0)) : 1.0;
+            const sus = mix ? Math.max(0.10, Math.min(1.0, mix.sustain ?? 0.70)) : 0.70;
+            const dur = Math.max(0.05, baseDur * lenScale);
+            const att = Math.min(dur * 0.45, Math.max(minAttack, mix ? (mix.attack || minAttack) : minAttack));
+            const susHoldEnd = now + att + (dur - att) * (0.12 + 0.70 * sus);
+            const susLevel = Math.max(0.002, peak * (0.18 + 0.82 * sus));
+
+            gainParam.setValueAtTime(0.001, now);
+            gainParam.linearRampToValueAtTime(peak, now + att);
+            if (susHoldEnd > now + att + 0.002) {
+                gainParam.exponentialRampToValueAtTime(susLevel, susHoldEnd);
+            }
+            gainParam.exponentialRampToValueAtTime(0.0008, now + dur);
+            return dur;
+        }
+
         function scheduleVoiceStep(ctx, targets, voiceKey, stepIndex, when, intensity = 0.8, respectMix = true) {
             if (!ctx || intensity <= 0.02) return;
-            const mix = layerMix[voiceKey];
-            if (respectMix && mix && mix.muted) return;
+            const mix = layerMix[voiceKey] || createDefaultLayerMix(voiceKey);
+            if (respectMix && mix.muted) return;
 
-            const effIntensity = intensity * (mix ? mix.vol : 1.0);
+            const effIntensity = intensity * mix.vol;
             if (effIntensity <= 0.01) return;
 
             const now = when;
             const targetMaster = targets.master;
             const targetReverb = targets.reverb;
             const targetDelay = targets.delay;
+            const pitchRatio = Math.pow(2, (mix.pitch || 0) / 12);
 
             const stepFilter = ctx.createBiquadFilter();
             stepFilter.type = 'lowpass';
-            stepFilter.frequency.setValueAtTime(250 * Math.pow(64, mix ? mix.filter : 1.0), now);
+            stepFilter.frequency.setValueAtTime(250 * Math.pow(64, mix.filter), now);
             stepFilter.Q.setValueAtTime(0.85, now);
 
             const stepOut = (typeof ctx.createStereoPanner === 'function')
                 ? ctx.createStereoPanner()
                 : ctx.createGain();
             if (stepOut.pan) {
-                stepOut.pan.setValueAtTime(Math.max(-1, Math.min(1, mix ? mix.pan : 0)), now);
+                stepOut.pan.setValueAtTime(Math.max(-1, Math.min(1, mix.pan)), now);
             }
             stepFilter.connect(stepOut);
             stepOut.connect(targetMaster);
 
-            const sendRev = abletonVoiceBuffers[voiceKey] || voiceKey !== 'EXT_STAIR';
-            const sendDly = abletonVoiceBuffers[voiceKey]
-                ? (voiceKey === 'EXT_COLUMNS' || voiceKey === 'FOYER_FRAMES')
-                : !['EXT_STAIR', 'FOYER_VOID'].includes(voiceKey);
-            if (targetReverb && sendRev) stepOut.connect(targetReverb);
-            if (targetDelay && sendDly) stepOut.connect(targetDelay);
+            if (targetReverb && mix.reverb > 0.005) {
+                const revWet = ctx.createGain();
+                revWet.gain.setValueAtTime(mix.reverb, now);
+                stepOut.connect(revWet);
+                revWet.connect(targetReverb);
+            }
+            if (targetDelay && mix.delay > 0.005) {
+                const dlyWet = ctx.createGain();
+                dlyWet.gain.setValueAtTime(mix.delay, now);
+                stepOut.connect(dlyWet);
+                dlyWet.connect(targetDelay);
+            }
 
-            // 1. Primary LMMS/Stem Audio Playback
+            // 1. Primary LMMS/Stem Audio Playback (Trim Start, Length, Pitch, Attack, Sustain)
             if (abletonVoiceBuffers[voiceKey]) {
                 const buf = abletonVoiceBuffers[voiceKey];
                 const src = ctx.createBufferSource();
                 src.buffer = buf;
+                src.playbackRate.setValueAtTime(pitchRatio, now);
 
                 const stepDur = buf.duration / 16.0;
-                const offset = ((stepIndex || 0) % 16) * stepDur;
-                const playLen = Math.min(buf.duration - offset, Math.max(0.35, stepDur * 2.2));
+                const baseOffset = ((stepIndex || 0) % 16) * stepDur;
+                const basePlayLen = Math.min(buf.duration - baseOffset, Math.max(0.35, stepDur * 2.2));
+                const offset = Math.min(buf.duration - 0.05, baseOffset + basePlayLen * (mix.trimStart || 0));
+                const availSourceLen = Math.max(0.05, buf.duration - offset);
+                const shapedDur = Math.max(0.06, Math.min(availSourceLen / pitchRatio, basePlayLen * (mix.length || 1.0)));
 
                 const gain = ctx.createGain();
                 const peak = Math.min(1.0, effIntensity * 0.88);
-                gain.gain.setValueAtTime(peak, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + playLen);
+                applyShapedEnvelope(gain.gain, now, shapedDur, peak, 0.003, { ...mix, length: 1.0 });
 
                 src.connect(gain);
                 gain.connect(stepFilter);
 
-                src.start(now, offset, playLen);
+                src.start(now, offset, Math.min(availSourceLen, shapedDur * pitchRatio + 0.03));
                 return;
             }
 
-            // 2. Synthetic Fallback (Used if audio stems are unavailable)
+            // 2. Synthetic Fallback (Applies Pitch, Trim Length, Attack & Sustain)
             if (voiceKey === 'EXT_STAIR') {
                 const isKickStep = (stepIndex % 4 === 0);
                 if (isKickStep) {
                     const kickOsc = ctx.createOscillator();
                     const kickEnv = ctx.createGain();
                     kickOsc.type = 'sine';
-                    kickOsc.frequency.setValueAtTime(118.0, now);
-                    kickOsc.frequency.exponentialRampToValueAtTime(42.0, now + 0.11);
+                    kickOsc.frequency.setValueAtTime(118.0 * pitchRatio, now);
+                    kickOsc.frequency.exponentialRampToValueAtTime(42.0 * pitchRatio, now + 0.11);
 
                     const kPeak = Math.min(0.40, effIntensity * 0.36);
-                    kickEnv.gain.setValueAtTime(0.001, now);
-                    kickEnv.gain.linearRampToValueAtTime(kPeak, now + 0.006);
-                    kickEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+                    const dur = applyShapedEnvelope(kickEnv.gain, now, 0.24, kPeak, 0.004, mix);
 
                     kickOsc.connect(kickEnv);
                     kickEnv.connect(stepFilter);
                     kickOsc.start(now);
-                    kickOsc.stop(now + 0.25);
+                    kickOsc.stop(now + dur + 0.02);
                 } else if (stepIndex % 2 === 0) {
                     const bassNotes = [65.41, 77.78, 87.31, 98.00];
-                    const freq = bassNotes[Math.floor(stepIndex / 4) % bassNotes.length];
+                    const freq = bassNotes[Math.floor(stepIndex / 4) % bassNotes.length] * pitchRatio;
                     const osc = ctx.createOscillator();
                     const filter = ctx.createBiquadFilter();
                     const env = ctx.createGain();
@@ -1685,20 +1965,18 @@
                     filter.frequency.exponentialRampToValueAtTime(95, now + 0.20);
 
                     const peak = Math.min(0.28, effIntensity * 0.24);
-                    env.gain.setValueAtTime(0.001, now);
-                    env.gain.linearRampToValueAtTime(peak, now + 0.015);
-                    env.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    const dur = applyShapedEnvelope(env.gain, now, 0.22, peak, 0.010, mix);
 
                     osc.connect(filter);
                     filter.connect(env);
                     env.connect(stepFilter);
                     osc.start(now);
-                    osc.stop(now + 0.23);
+                    osc.stop(now + dur + 0.02);
                 }
             }
             else if (voiceKey === 'EXT_COLUMNS') {
                 const colArp = [261.63, 311.13, 392.00, 466.16, 587.33, 466.16, 392.00, 311.13];
-                const freq = colArp[stepIndex % colArp.length];
+                const freq = colArp[stepIndex % colArp.length] * pitchRatio;
 
                 const osc = ctx.createOscillator();
                 const filter = ctx.createBiquadFilter();
@@ -1712,20 +1990,18 @@
                 filter.frequency.exponentialRampToValueAtTime(280, now + 0.20);
 
                 const peak = Math.min(0.30, effIntensity * 0.26);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.012);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.24);
+                const dur = applyShapedEnvelope(env.gain, now, 0.24, peak, 0.008, mix);
 
                 osc.connect(filter);
                 filter.connect(env);
                 env.connect(stepFilter);
 
                 osc.start(now);
-                osc.stop(now + 0.25);
+                osc.stop(now + dur + 0.02);
             }
             else if (voiceKey === 'ENTRANCE_GLASS') {
                 const glassNotes = [622.25, 698.46, 783.99, 932.33];
-                const freq = glassNotes[Math.floor(stepIndex / 4) % glassNotes.length];
+                const freq = glassNotes[Math.floor(stepIndex / 4) % glassNotes.length] * pitchRatio;
 
                 const osc = ctx.createOscillator();
                 const env = ctx.createGain();
@@ -1733,35 +2009,31 @@
                 osc.frequency.setValueAtTime(freq, now);
 
                 const peak = Math.min(0.20, effIntensity * 0.18);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.04);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.65);
+                const dur = applyShapedEnvelope(env.gain, now, 0.65, peak, 0.02, mix);
 
                 osc.connect(env);
                 env.connect(stepFilter);
 
                 osc.start(now);
-                osc.stop(now + 0.66);
+                osc.stop(now + dur + 0.02);
             }
             else if (voiceKey === 'FOYER_VOID') {
                 const osc = ctx.createOscillator();
                 const env = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(65.41, now);
+                osc.frequency.setValueAtTime(65.41 * pitchRatio, now);
 
                 const peak = Math.min(0.30, effIntensity * 0.26);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.12);
-                env.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+                const dur = applyShapedEnvelope(env.gain, now, 0.95, peak, 0.04, mix);
 
                 osc.connect(env);
                 env.connect(stepFilter);
                 osc.start(now);
-                osc.stop(now + 0.96);
+                osc.stop(now + dur + 0.02);
             }
             else if (voiceKey === 'FOYER_FRAMES') {
                 const frameNotes = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25];
-                const freq = frameNotes[stepIndex % frameNotes.length];
+                const freq = frameNotes[stepIndex % frameNotes.length] * pitchRatio;
 
                 const osc1 = ctx.createOscillator();
                 const osc2 = ctx.createOscillator();
@@ -1778,9 +2050,7 @@
                 filter.frequency.exponentialRampToValueAtTime(220, now + 0.18);
 
                 const peak = Math.min(0.26, effIntensity * 0.22);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.010);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.20);
+                const dur = applyShapedEnvelope(env.gain, now, 0.20, peak, 0.008, mix);
 
                 osc1.connect(filter);
                 osc2.connect(filter);
@@ -1789,15 +2059,15 @@
 
                 osc1.start(now);
                 osc2.start(now);
-                osc1.stop(now + 0.21);
-                osc2.stop(now + 0.21);
+                osc1.stop(now + dur + 0.02);
+                osc2.stop(now + dur + 0.02);
             }
             else if (voiceKey === 'INT_STAIR_DOWN') {
                 const descendingScale = [
                     783.99, 698.46, 622.25, 523.25, 466.16, 392.00,
                     349.23, 311.13, 261.63, 233.08, 196.00, 155.56
                 ];
-                const freq = descendingScale[stepIndex % descendingScale.length];
+                const freq = descendingScale[stepIndex % descendingScale.length] * pitchRatio;
 
                 const osc = ctx.createOscillator();
                 const filter = ctx.createBiquadFilter();
@@ -1811,20 +2081,18 @@
                 filter.frequency.exponentialRampToValueAtTime(240, now + 0.26);
 
                 const peak = Math.min(0.30, effIntensity * 0.26);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.015);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.28);
+                const dur = applyShapedEnvelope(env.gain, now, 0.28, peak, 0.010, mix);
 
                 osc.connect(filter);
                 filter.connect(env);
                 env.connect(stepFilter);
 
                 osc.start(now);
-                osc.stop(now + 0.29);
+                osc.stop(now + dur + 0.02);
             }
             else if (voiceKey === 'SKYLIGHT_ROOF') {
                 const skyArp = [783.99, 932.33, 1046.50, 1174.66];
-                const freq = skyArp[Math.floor(stepIndex / 2) % skyArp.length];
+                const freq = skyArp[Math.floor(stepIndex / 2) % skyArp.length] * pitchRatio;
 
                 const osc = ctx.createOscillator();
                 const env = ctx.createGain();
@@ -1832,15 +2100,13 @@
                 osc.frequency.setValueAtTime(freq, now);
 
                 const peak = Math.min(0.18, effIntensity * 0.16);
-                env.gain.setValueAtTime(0.001, now);
-                env.gain.linearRampToValueAtTime(peak, now + 0.03);
-                env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
+                const dur = applyShapedEnvelope(env.gain, now, 0.55, peak, 0.02, mix);
 
                 osc.connect(env);
                 env.connect(stepFilter);
 
                 osc.start(now);
-                osc.stop(now + 0.56);
+                osc.stop(now + dur + 0.02);
             }
         }
 
