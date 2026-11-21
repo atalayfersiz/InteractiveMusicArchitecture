@@ -465,9 +465,10 @@
 
         .seq-actions {
             display: flex;
+            align-items: center;
             gap: 6px;
         }
-        .seq-mini-btn {
+        .seq-mini-btn, .seq-mini-select {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.16);
             color: var(--muted);
@@ -477,9 +478,30 @@
             cursor: pointer;
             text-transform: uppercase;
         }
-        .seq-mini-btn:hover {
+        .seq-mini-select {
+            color: var(--text);
+            padding: 3px 6px;
+        }
+        .seq-mini-select option {
+            background: #10131a;
+            color: var(--text);
+        }
+        .seq-mini-btn:hover, .seq-mini-select:hover {
             color: #fff;
             border-color: #fff;
+        }
+        .seq-mini-btn.export-btn {
+            border-color: rgba(229, 195, 120, 0.55);
+            color: var(--accent);
+        }
+        .seq-mini-btn.export-btn:hover {
+            background: rgba(229, 195, 120, 0.16);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .seq-mini-btn:disabled {
+            opacity: 0.55;
+            cursor: wait;
         }
 
         /* Lower Row of Bottom Dock: Interactive 7-Voice Trigger Pads & Live Meters */
@@ -600,7 +622,13 @@
                         <span id="seq-mode-label">16-STEP SEQUENCER</span>
                         <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
                     </div>
-                    <div class="seq-actions">
+                    <div class="seq-actions" onmousedown="event.stopPropagation()">
+                        <select id="seq-export-loops" class="seq-mini-select" title="Number of 16-step loops to export">
+                            <option value="1">1 Loop</option>
+                            <option value="2" selected>2 Loops</option>
+                            <option value="4">4 Loops</option>
+                        </select>
+                        <button class="seq-mini-btn export-btn" id="btn-export-wav" onclick="exportSequencerAudio()" title="Render & Save Sequencer Audio as WAV">Export WAV</button>
                         <button class="seq-mini-btn" onclick="clearSequencerLoop()" title="Clear All Layers [C]">Clear All [C]</button>
                     </div>
                 </div>
@@ -830,6 +858,7 @@
         const abletonVoiceBuffers = {};
         const abletonLoopSources = {};
         let hasAbletonAudio = false;
+        let stemLoadPromise = null;
 
         const BPM = 116;
         const STEP_TIME_MS = ((60 / BPM) / 4) * 1000;
@@ -978,26 +1007,21 @@
             document.getElementById('walk-speed-label').innerText = `${walkSpeed.toFixed(1)}m/s`;
         }
 
-        function initAudioEngine() {
-            if (audioCtx) {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                return;
-            }
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function buildMasterAudioGraph(ctx, masterVol = 0.80) {
+            const now = ctx.currentTime;
+            const comp = ctx.createDynamicsCompressor();
+            comp.threshold.setValueAtTime(-16, now);
+            comp.knee.setValueAtTime(14, now);
+            comp.ratio.setValueAtTime(4.5, now);
+            comp.attack.setValueAtTime(0.008, now);
+            comp.release.setValueAtTime(0.22, now);
 
-            compressor = audioCtx.createDynamicsCompressor();
-            compressor.threshold.setValueAtTime(-16, audioCtx.currentTime);
-            compressor.knee.setValueAtTime(14, audioCtx.currentTime);
-            compressor.ratio.setValueAtTime(4.5, audioCtx.currentTime);
-            compressor.attack.setValueAtTime(0.008, audioCtx.currentTime);
-            compressor.release.setValueAtTime(0.22, audioCtx.currentTime);
+            const mGain = ctx.createGain();
+            mGain.gain.value = masterVol;
 
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = isMuted ? 0.00001 : 0.80;
-
-            reverbNode = audioCtx.createConvolver();
-            const revLen = Math.floor(audioCtx.sampleRate * 3.4);
-            const impulse = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
+            const rev = ctx.createConvolver();
+            const revLen = Math.floor(ctx.sampleRate * 3.4);
+            const impulse = ctx.createBuffer(2, revLen, ctx.sampleRate);
             for (let ch = 0; ch < 2; ch++) {
                 const data = impulse.getChannelData(ch);
                 for (let i = 0; i < revLen; i++) {
@@ -1005,30 +1029,55 @@
                     data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.4) * 0.6;
                 }
             }
-            reverbNode.buffer = impulse;
-            reverbSendGain = audioCtx.createGain();
-            reverbSendGain.gain.value = 0.42;
+            rev.buffer = impulse;
+            const revSend = ctx.createGain();
+            revSend.gain.value = 0.42;
 
-            delayNode = audioCtx.createDelay(1.0);
-            delayNode.delayTime.value = 0.375;
-            const delayFeedback = audioCtx.createGain();
-            delayFeedback.gain.value = 0.34;
-            const delayFilter = audioCtx.createBiquadFilter();
-            delayFilter.type = 'lowpass';
-            delayFilter.frequency.value = 1800;
-            delaySendGain = audioCtx.createGain();
-            delaySendGain.gain.value = 0.25;
+            const dly = ctx.createDelay(1.0);
+            dly.delayTime.value = 0.375;
+            const dlyFeedback = ctx.createGain();
+            dlyFeedback.gain.value = 0.34;
+            const dlyFilter = ctx.createBiquadFilter();
+            dlyFilter.type = 'lowpass';
+            dlyFilter.frequency.value = 1800;
+            const dlySend = ctx.createGain();
+            dlySend.gain.value = 0.25;
 
-            delayNode.connect(delayFilter);
-            delayFilter.connect(delayFeedback);
-            delayFeedback.connect(delayNode);
-            delayNode.connect(delaySendGain);
-            delaySendGain.connect(masterGain);
+            dly.connect(dlyFilter);
+            dlyFilter.connect(dlyFeedback);
+            dlyFeedback.connect(dly);
+            dly.connect(dlySend);
+            dlySend.connect(mGain);
 
-            reverbSendGain.connect(reverbNode);
-            reverbNode.connect(masterGain);
-            masterGain.connect(compressor);
-            compressor.connect(audioCtx.destination);
+            revSend.connect(rev);
+            rev.connect(mGain);
+            mGain.connect(comp);
+            comp.connect(ctx.destination);
+
+            return {
+                compressor: comp,
+                masterGain: mGain,
+                reverbNode: rev,
+                reverbSendGain: revSend,
+                delayNode: dly,
+                delaySendGain: dlySend
+            };
+        }
+
+        function initAudioEngine() {
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                return;
+            }
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            const graph = buildMasterAudioGraph(audioCtx, isMuted ? 0.00001 : 0.80);
+            compressor = graph.compressor;
+            masterGain = graph.masterGain;
+            reverbNode = graph.reverbNode;
+            reverbSendGain = graph.reverbSendGain;
+            delayNode = graph.delayNode;
+            delaySendGain = graph.delaySendGain;
 
             loadAbletonAudioStems();
             setupContinuousVoices();
@@ -1036,34 +1085,42 @@
         }
 
         function loadAbletonAudioStems() {
-            if (!audioCtx) return;
+            if (!audioCtx) return Promise.resolve();
             const data = window.JSG_AUDIO_DATA;
-            if (!data || !data.hasAudioStems || !data.audioStemsBase64) return;
+            if (!data || !data.hasAudioStems || !data.audioStemsBase64) return Promise.resolve();
 
-            ACTIVE_VOICE_KEYS.forEach(vk => {
+            const decodeTasks = ACTIVE_VOICE_KEYS.map(vk => {
                 const b64Url = data.audioStemsBase64[vk];
-                if (!b64Url) return;
+                if (!b64Url) return Promise.resolve();
 
-                try {
-                    const binaryStr = atob(b64Url.split(',')[1]);
-                    const len = binaryStr.length;
-                    const bytes = new Uint8Array(len);
-                    for (let i = 0; i < len; i++) {
-                        bytes[i] = binaryStr.charCodeAt(i);
-                    }
-                    audioCtx.decodeAudioData(bytes.buffer, (decodedBuf) => {
-                        abletonVoiceBuffers[vk] = decodedBuf;
-                        hasAbletonAudio = true;
-                        if (['FOYER_VOID', 'ENTRANCE_GLASS', 'SKYLIGHT_ROOF'].includes(vk)) {
-                            startAbletonLoop(vk);
+                return new Promise((resolve) => {
+                    try {
+                        const binaryStr = atob(b64Url.split(',')[1]);
+                        const len = binaryStr.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) {
+                            bytes[i] = binaryStr.charCodeAt(i);
                         }
-                    }, (err) => {
-                        console.warn("Ableton audio decode note for", vk, err);
-                    });
-                } catch (e) {
-                    console.warn("Base64 decode note for", vk, e);
-                }
+                        audioCtx.decodeAudioData(bytes.buffer, (decodedBuf) => {
+                            abletonVoiceBuffers[vk] = decodedBuf;
+                            hasAbletonAudio = true;
+                            if (['FOYER_VOID', 'ENTRANCE_GLASS', 'SKYLIGHT_ROOF'].includes(vk)) {
+                                startAbletonLoop(vk);
+                            }
+                            resolve();
+                        }, (err) => {
+                            console.warn("Ableton audio decode note for", vk, err);
+                            resolve();
+                        });
+                    } catch (e) {
+                        console.warn("Base64 decode note for", vk, e);
+                        resolve();
+                    }
+                });
             });
+
+            stemLoadPromise = Promise.all(decodeTasks);
+            return stemLoadPromise;
         }
 
         function startAbletonLoop(vk) {
@@ -1221,41 +1278,55 @@
 
         function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
             if (!audioCtx || isMuted || intensity <= 0.02) return;
-            const now = audioCtx.currentTime;
+            scheduleVoiceStep(
+                audioCtx,
+                { master: masterGain, reverb: reverbSendGain, delay: delaySendGain },
+                voiceKey,
+                stepIndex,
+                audioCtx.currentTime,
+                intensity
+            );
+        }
 
-            // 1. Primary Ableton Audio Playback (Authentic high-fidelity audio from Ableton Live)
+        function scheduleVoiceStep(ctx, targets, voiceKey, stepIndex, when, intensity = 0.8) {
+            if (!ctx || intensity <= 0.02) return;
+            const now = when;
+            const targetMaster = targets.master;
+            const targetReverb = targets.reverb;
+            const targetDelay = targets.delay;
+
+            // 1. Primary LMMS/Stem Audio Playback
             if (abletonVoiceBuffers[voiceKey]) {
                 const buf = abletonVoiceBuffers[voiceKey];
-                const src = audioCtx.createBufferSource();
+                const src = ctx.createBufferSource();
                 src.buffer = buf;
 
                 const stepDur = buf.duration / 16.0;
                 const offset = ((stepIndex || 0) % 16) * stepDur;
                 const playLen = Math.min(buf.duration - offset, Math.max(0.35, stepDur * 2.2));
 
-                const gain = audioCtx.createGain();
+                const gain = ctx.createGain();
                 const peak = Math.min(1.0, intensity * 0.88);
                 gain.gain.setValueAtTime(peak, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + playLen);
 
                 src.connect(gain);
-                gain.connect(masterGain);
-                if (reverbSendGain) gain.connect(reverbSendGain);
-                if (delaySendGain && (voiceKey === 'EXT_COLUMNS' || voiceKey === 'FOYER_FRAMES')) {
-                    gain.connect(delaySendGain);
+                gain.connect(targetMaster);
+                if (targetReverb) gain.connect(targetReverb);
+                if (targetDelay && (voiceKey === 'EXT_COLUMNS' || voiceKey === 'FOYER_FRAMES')) {
+                    gain.connect(targetDelay);
                 }
 
                 src.start(now, offset, playLen);
                 return;
             }
 
-            // 2. Synthetic Fallback (Only used if Ableton audio stems are loading)
-
+            // 2. Synthetic Fallback (Used if audio stems are unavailable)
             if (voiceKey === 'EXT_STAIR') {
                 const isKickStep = (stepIndex % 4 === 0);
                 if (isKickStep) {
-                    const kickOsc = audioCtx.createOscillator();
-                    const kickEnv = audioCtx.createGain();
+                    const kickOsc = ctx.createOscillator();
+                    const kickEnv = ctx.createGain();
                     kickOsc.type = 'sine';
                     kickOsc.frequency.setValueAtTime(118.0, now);
                     kickOsc.frequency.exponentialRampToValueAtTime(42.0, now + 0.11);
@@ -1266,15 +1337,15 @@
                     kickEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
 
                     kickOsc.connect(kickEnv);
-                    kickEnv.connect(masterGain);
+                    kickEnv.connect(targetMaster);
                     kickOsc.start(now);
                     kickOsc.stop(now + 0.25);
                 } else if (stepIndex % 2 === 0) {
                     const bassNotes = [65.41, 77.78, 87.31, 98.00];
                     const freq = bassNotes[Math.floor(stepIndex / 4) % bassNotes.length];
-                    const osc = audioCtx.createOscillator();
-                    const filter = audioCtx.createBiquadFilter();
-                    const env = audioCtx.createGain();
+                    const osc = ctx.createOscillator();
+                    const filter = ctx.createBiquadFilter();
+                    const env = ctx.createGain();
 
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(freq, now);
@@ -1289,7 +1360,7 @@
 
                     osc.connect(filter);
                     filter.connect(env);
-                    env.connect(masterGain);
+                    env.connect(targetMaster);
                     osc.start(now);
                     osc.stop(now + 0.23);
                 }
@@ -1298,9 +1369,9 @@
                 const colArp = [261.63, 311.13, 392.00, 466.16, 587.33, 466.16, 392.00, 311.13];
                 const freq = colArp[stepIndex % colArp.length];
 
-                const osc = audioCtx.createOscillator();
-                const filter = audioCtx.createBiquadFilter();
-                const env = audioCtx.createGain();
+                const osc = ctx.createOscillator();
+                const filter = ctx.createBiquadFilter();
+                const env = ctx.createGain();
 
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, now);
@@ -1316,9 +1387,9 @@
 
                 osc.connect(filter);
                 filter.connect(env);
-                env.connect(masterGain);
-                env.connect(delaySendGain);
-                env.connect(reverbSendGain);
+                env.connect(targetMaster);
+                if (targetDelay) env.connect(targetDelay);
+                if (targetReverb) env.connect(targetReverb);
 
                 osc.start(now);
                 osc.stop(now + 0.25);
@@ -1327,8 +1398,8 @@
                 const glassNotes = [622.25, 698.46, 783.99, 932.33];
                 const freq = glassNotes[Math.floor(stepIndex / 4) % glassNotes.length];
 
-                const osc = audioCtx.createOscillator();
-                const env = audioCtx.createGain();
+                const osc = ctx.createOscillator();
+                const env = ctx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
@@ -1338,16 +1409,16 @@
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.65);
 
                 osc.connect(env);
-                env.connect(masterGain);
-                env.connect(reverbSendGain);
-                env.connect(delaySendGain);
+                env.connect(targetMaster);
+                if (targetReverb) env.connect(targetReverb);
+                if (targetDelay) env.connect(targetDelay);
 
                 osc.start(now);
                 osc.stop(now + 0.66);
             }
             else if (voiceKey === 'FOYER_VOID') {
-                const osc = audioCtx.createOscillator();
-                const env = audioCtx.createGain();
+                const osc = ctx.createOscillator();
+                const env = ctx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(65.41, now);
 
@@ -1357,8 +1428,8 @@
                 env.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
 
                 osc.connect(env);
-                env.connect(masterGain);
-                env.connect(reverbSendGain);
+                env.connect(targetMaster);
+                if (targetReverb) env.connect(targetReverb);
                 osc.start(now);
                 osc.stop(now + 0.96);
             }
@@ -1366,10 +1437,10 @@
                 const frameNotes = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25];
                 const freq = frameNotes[stepIndex % frameNotes.length];
 
-                const osc1 = audioCtx.createOscillator();
-                const osc2 = audioCtx.createOscillator();
-                const filter = audioCtx.createBiquadFilter();
-                const env = audioCtx.createGain();
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const filter = ctx.createBiquadFilter();
+                const env = ctx.createGain();
 
                 osc1.type = 'sawtooth';
                 osc2.type = 'triangle';
@@ -1388,9 +1459,9 @@
                 osc1.connect(filter);
                 osc2.connect(filter);
                 filter.connect(env);
-                env.connect(masterGain);
-                env.connect(delaySendGain);
-                env.connect(reverbSendGain);
+                env.connect(targetMaster);
+                if (targetDelay) env.connect(targetDelay);
+                if (targetReverb) env.connect(targetReverb);
 
                 osc1.start(now);
                 osc2.start(now);
@@ -1404,9 +1475,9 @@
                 ];
                 const freq = descendingScale[stepIndex % descendingScale.length];
 
-                const osc = audioCtx.createOscillator();
-                const filter = audioCtx.createBiquadFilter();
-                const env = audioCtx.createGain();
+                const osc = ctx.createOscillator();
+                const filter = ctx.createBiquadFilter();
+                const env = ctx.createGain();
 
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, now);
@@ -1422,9 +1493,9 @@
 
                 osc.connect(filter);
                 filter.connect(env);
-                env.connect(masterGain);
-                env.connect(delaySendGain);
-                env.connect(reverbSendGain);
+                env.connect(targetMaster);
+                if (targetDelay) env.connect(targetDelay);
+                if (targetReverb) env.connect(targetReverb);
 
                 osc.start(now);
                 osc.stop(now + 0.29);
@@ -1433,8 +1504,8 @@
                 const skyArp = [783.99, 932.33, 1046.50, 1174.66];
                 const freq = skyArp[Math.floor(stepIndex / 2) % skyArp.length];
 
-                const osc = audioCtx.createOscillator();
-                const env = audioCtx.createGain();
+                const osc = ctx.createOscillator();
+                const env = ctx.createGain();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
@@ -1444,12 +1515,141 @@
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
 
                 osc.connect(env);
-                env.connect(masterGain);
-                env.connect(reverbSendGain);
-                env.connect(delaySendGain);
+                env.connect(targetMaster);
+                if (targetReverb) env.connect(targetReverb);
+                if (targetDelay) env.connect(targetDelay);
 
                 osc.start(now);
                 osc.stop(now + 0.56);
+            }
+        }
+
+        function encodeAudioBufferToWav(audioBuffer) {
+            const numChannels = Math.min(2, audioBuffer.numberOfChannels);
+            const sampleRate = audioBuffer.sampleRate;
+            const numFrames = audioBuffer.length;
+            const channels = [];
+            let maxPeak = 0;
+
+            for (let ch = 0; ch < numChannels; ch++) {
+                const data = audioBuffer.getChannelData(ch);
+                channels.push(data);
+                for (let i = 0; i < numFrames; i++) {
+                    const absVal = Math.abs(data[i]);
+                    if (absVal > maxPeak) maxPeak = absVal;
+                }
+            }
+
+            const gainScale = maxPeak > 0.98 ? (0.98 / maxPeak) : 1.0;
+            const bytesPerSample = 2;
+            const dataByteLength = numFrames * numChannels * bytesPerSample;
+            const buffer = new ArrayBuffer(44 + dataByteLength);
+            const view = new DataView(buffer);
+
+            const writeAscii = (offset, str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            };
+
+            writeAscii(0, 'RIFF');
+            view.setUint32(4, 36 + dataByteLength, true);
+            writeAscii(8, 'WAVE');
+            writeAscii(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
+            view.setUint16(32, numChannels * bytesPerSample, true);
+            view.setUint16(34, 16, true);
+            writeAscii(36, 'data');
+            view.setUint32(40, dataByteLength, true);
+
+            let writePos = 44;
+            for (let i = 0; i < numFrames; i++) {
+                for (let ch = 0; ch < numChannels; ch++) {
+                    const s = Math.max(-1, Math.min(1, channels[ch][i] * gainScale));
+                    view.setInt16(writePos, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    writePos += 2;
+                }
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        async function exportSequencerAudio() {
+            const btn = document.getElementById('btn-export-wav');
+            const hasAnyStep = sequencerSteps.some(list => list && list.length > 0);
+            if (!hasAnyStep) {
+                if (btn) {
+                    const orig = btn.innerText;
+                    btn.innerText = 'ADD STEPS FIRST';
+                    setTimeout(() => { btn.innerText = orig; }, 1500);
+                }
+                return;
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'RENDERING...';
+            }
+
+            try {
+                initAudioEngine();
+                if (stemLoadPromise) await stemLoadPromise;
+
+                const loopsEl = document.getElementById('seq-export-loops');
+                const loopCount = Math.max(1, parseInt(loopsEl ? loopsEl.value : '2', 10) || 2);
+                const firstStem = Object.values(abletonVoiceBuffers)[0];
+                const sampleRate = firstStem ? firstStem.sampleRate : (audioCtx ? audioCtx.sampleRate : 44100);
+                const stepSec = STEP_TIME_MS / 1000.0;
+                const musicDur = loopCount * 16 * stepSec;
+                const tailSec = 2.0;
+                const totalFrames = Math.ceil((musicDur + tailSec) * sampleRate);
+
+                const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+                const offlineCtx = new OfflineCtx(2, totalFrames, sampleRate);
+                const graph = buildMasterAudioGraph(offlineCtx, 0.82);
+                const targets = {
+                    master: graph.masterGain,
+                    reverb: graph.reverbSendGain,
+                    delay: graph.delaySendGain
+                };
+
+                for (let loop = 0; loop < loopCount; loop++) {
+                    for (let step = 0; step < 16; step++) {
+                        const events = sequencerSteps[step];
+                        if (!events || events.length === 0) continue;
+                        const when = (loop * 16 + step) * stepSec;
+                        events.forEach(ev => {
+                            scheduleVoiceStep(offlineCtx, targets, ev.voice, step, when, 0.85);
+                        });
+                    }
+                }
+
+                const renderedBuffer = await offlineCtx.startRendering();
+                const wavBlob = encodeAudioBufferToWav(renderedBuffer);
+                const url = URL.createObjectURL(wavBlob);
+                const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `JSG_Sequencer_${BPM}BPM_${loopCount}x_${stamp}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+                if (btn) {
+                    btn.innerText = 'SAVED .WAV';
+                    setTimeout(() => { btn.innerText = 'Export WAV'; }, 1800);
+                }
+            } catch (err) {
+                console.error('Sequencer WAV export failed:', err);
+                if (btn) btn.innerText = 'Export Failed';
+                setTimeout(() => { if (btn) btn.innerText = 'Export WAV'; }, 2000);
+            } finally {
+                if (btn) btn.disabled = false;
             }
         }
 
