@@ -373,6 +373,11 @@
         #gaze-caption.visible {
             opacity: 1;
         }
+        body.studio-focus #reticle,
+        body.studio-focus #gaze-caption {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
 
         /* Studio Focus Backdrop (Expanded Mix Mode) */
         #studio-backdrop {
@@ -409,7 +414,7 @@
             bottom: auto;
             top: 50%;
             transform: translate(-50%, -50%);
-            width: min(1160px, 95vw);
+            width: min(1380px, 96vw);
             z-index: 20;
             box-shadow: 0 28px 80px rgba(0, 0, 0, 0.85);
             border-color: rgba(229, 195, 120, 0.42);
@@ -434,8 +439,8 @@
             gap: 5px;
         }
         .bottom-dock.expanded-studio .sequencer-row {
-            padding: 12px 16px;
-            gap: 8px;
+            padding: 16px 20px;
+            gap: 10px;
         }
         .sequencer-row.visible-active {
             display: flex;
@@ -452,7 +457,7 @@
             display: block;
         }
         .bottom-dock.expanded-studio .seq-visualizer {
-            height: 58px;
+            height: 66px;
         }
 
         .seq-header {
@@ -575,26 +580,32 @@
         .seq-bpm-box {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 2px 6px;
+            gap: 6px;
+            padding: 2px 7px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.14);
             font-family: 'JetBrains Mono', monospace;
             font-size: 9.5px;
             color: var(--text);
         }
-        .seq-bpm-btn {
-            background: transparent;
-            border: none;
-            color: var(--muted);
-            cursor: pointer;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            line-height: 1;
-            padding: 0 3px;
+        #seq-bpm-val {
+            cursor: text;
+            user-select: none;
+            min-width: 48px;
         }
-        .seq-bpm-btn:hover {
+        #seq-bpm-val:hover {
             color: var(--accent);
+        }
+        .seq-bpm-input {
+            width: 48px;
+            background: rgba(0, 0, 0, 0.68);
+            border: 1px solid var(--accent);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            text-align: center;
+            padding: 1px 3px;
+            outline: none;
         }
 
         .knob-wrap {
@@ -765,8 +776,8 @@
             border-color: var(--accent);
         }
         .bottom-dock.expanded-studio .step-cell {
-            height: 23px;
-            font-size: 8.5px;
+            height: 28px;
+            font-size: 9px;
         }
 
         .seq-mini-btn.rec-armed {
@@ -810,6 +821,13 @@
             background: rgba(0, 0, 0, 0.38);
             border: 1px solid rgba(255, 255, 255, 0.14);
             display: block;
+        }
+        .bottom-dock.expanded-studio .seq-shaper {
+            padding: 12px 12px 6px;
+        }
+        .bottom-dock.expanded-studio .shaper-canvas {
+            width: 140px;
+            height: 48px;
         }
         .shaper-graph-sub {
             font-family: 'JetBrains Mono', monospace;
@@ -1065,11 +1083,7 @@
                     <div class="seq-info">
                         <span id="seq-mode-label">16-STEP</span>
                         <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
-                        <div class="seq-bpm-box" onmousedown="event.stopPropagation()" title="Adjust Sequencer BPM (also adjusts Walk Speed)">
-                            <button class="seq-bpm-btn" onclick="nudgeBpm(-4)">-</button>
-                            <span id="seq-bpm-val">116 BPM</span>
-                            <button class="seq-bpm-btn" onclick="nudgeBpm(4)">+</button>
-                        </div>
+                        <div class="seq-bpm-box" id="seq-bpm-box" onmousedown="event.stopPropagation()" title="Drag knob to adjust BPM · Double-click BPM number to type exact tempo"></div>
                     </div>
                     <div class="seq-master-knobs" id="seq-master-knobs" onmousedown="event.stopPropagation()"></div>
                     <div class="seq-actions" onmousedown="event.stopPropagation()">
@@ -1341,9 +1355,10 @@
         let reticlePulseTimer = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
 
+        let bpmKnobCtrl = null;
         function setUnifiedTempo({ bpm = null, speed = null }) {
             if (bpm !== null && !isNaN(bpm)) {
-                currentBpm = Math.max(76, Math.min(188, Math.round(bpm)));
+                currentBpm = Math.max(60, Math.min(200, Math.round(bpm)));
                 walkSpeed = Math.max(0.8, Math.min(6.0, +((currentBpm - 68) / 20).toFixed(2)));
             } else if (speed !== null && !isNaN(speed)) {
                 walkSpeed = Math.max(0.8, Math.min(6.0, +parseFloat(speed).toFixed(2)));
@@ -1355,10 +1370,9 @@
             if (sliderEl) sliderEl.value = String(walkSpeed);
             if (speedLblEl) speedLblEl.innerText = `${walkSpeed.toFixed(1)}m/s · ${currentBpm}`;
             if (bpmEl) bpmEl.innerText = `${currentBpm} BPM`;
-        }
-
-        function nudgeBpm(delta) {
-            setUnifiedTempo({ bpm: currentBpm + delta });
+            if (bpmKnobCtrl && bpmKnobCtrl.setKnobValue) {
+                bpmKnobCtrl.setKnobValue(currentBpm, false);
+            }
         }
 
         function createDefaultLayerMix(vk) {
@@ -1563,6 +1577,68 @@
                 }
             }));
         }
+
+        // Mount BPM Rotary Knob + Double-Click Inline Typing
+        function initBpmControl() {
+            const box = document.getElementById('seq-bpm-box');
+            if (!box) return;
+            bpmKnobCtrl = createRotaryKnob({
+                label: '',
+                min: 60,
+                max: 200,
+                step: 1,
+                defaultValue: BASE_BPM,
+                color: '#e5c378',
+                isMaster: false,
+                showValue: false,
+                formatValue: (v) => `${Math.round(v)} BPM`,
+                onChange: (v) => setUnifiedTempo({ bpm: v })
+            });
+
+            const valSpan = document.createElement('span');
+            valSpan.id = 'seq-bpm-val';
+            valSpan.innerText = `${currentBpm} BPM`;
+            valSpan.title = 'Double-click to type BPM';
+
+            const input = document.createElement('input');
+            input.id = 'seq-bpm-input';
+            input.className = 'seq-bpm-input';
+            input.type = 'number';
+            input.min = '60';
+            input.max = '200';
+            input.style.display = 'none';
+
+            const finishEdit = (commit) => {
+                if (commit) {
+                    const parsed = parseInt(input.value, 10);
+                    if (!isNaN(parsed)) setUnifiedTempo({ bpm: parsed });
+                }
+                input.style.display = 'none';
+                valSpan.style.display = '';
+            };
+
+            valSpan.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                valSpan.style.display = 'none';
+                input.value = String(currentBpm);
+                input.style.display = '';
+                input.focus();
+                input.select();
+            });
+
+            input.addEventListener('mousedown', (e) => e.stopPropagation());
+            input.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') finishEdit(true);
+                else if (e.key === 'Escape') finishEdit(false);
+            });
+            input.addEventListener('blur', () => finishEdit(true));
+
+            box.appendChild(bpmKnobCtrl);
+            box.appendChild(valSpan);
+            box.appendChild(input);
+        }
+        initBpmControl();
 
         // Build 7-layer x 16-step interactive sequencer cells + compact M/S + Studio mixing knobs in the DOM
         const seqContainer = document.getElementById('sequencer-ui');
@@ -1773,7 +1849,7 @@
             groupsWrap.appendChild(makeGroup('TRIM & PITCH', [
                 { key: 'trimStart', label: 'Start', min: 0, max: 0.75, defaultValue: 0.0, formatValue: (v) => `${Math.round(v * 100)}%` },
                 { key: 'length', label: 'Length', min: 0.15, max: 1.0, defaultValue: 1.0, formatValue: (v) => `${Math.round(v * 100)}%` },
-                { key: 'pitch', label: 'Pitch', min: -12, max: 12, step: 1, defaultValue: 0, formatValue: (v) => `${v > 0 ? '+' : ''}${Math.round(v)}st` },
+                { key: 'pitch', label: 'Pitch', min: -24, max: 24, step: 1, defaultValue: 0, formatValue: (v) => `${v > 0 ? '+' : ''}${Math.round(v)}st` },
             ], 'shaper-wave-canvas'));
 
             groupsWrap.appendChild(makeGroup('ENVELOPE', [
@@ -1938,9 +2014,11 @@
 
             if (dock) dock.classList.toggle('expanded-studio', isStudioExpanded);
             if (backdrop) backdrop.classList.toggle('visible', isStudioExpanded);
+            document.body.classList.toggle('studio-focus', isStudioExpanded);
             if (btn) btn.innerText = isStudioExpanded ? '⤡ Close [E]' : '⤢ Studio';
 
             if (isStudioExpanded) {
+                moveKeys.w = moveKeys.a = moveKeys.s = moveKeys.d = false;
                 if (isPointerLocked && document.exitPointerLock) document.exitPointerLock();
                 if (interactionMode !== 'ACTIVE') setInteractionMode('ACTIVE');
                 drawShaperWaveform(selectedSequencerVoice);
@@ -2509,7 +2587,6 @@
             const targetReverb = targets.reverb;
             const targetDelay = targets.delay;
             const activeMap = targets.activeMap || activeVoiceInstances;
-            const bpmRatio = currentBpm / BASE_BPM;
             const pitchRatio = Math.pow(2, (mix.pitch || 0) / 12);
 
             const stepFilter = ctx.createBiquadFilter();
@@ -2566,13 +2643,13 @@
 
                 const src = ctx.createBufferSource();
                 src.buffer = buf;
-                const totalRate = pitchRatio * bpmRatio;
-                src.playbackRate.setValueAtTime(totalRate, now);
+                // Keep natural sample pitch independent of BPM/walk-speed changes; only Pitch knob shifts pitch
+                src.playbackRate.setValueAtTime(pitchRatio, now);
 
                 const stepDurSec = (60 / currentBpm) / 4;
                 const offset = Math.min(buf.duration - 0.05, buf.duration * (mix.trimStart || 0));
                 const availSourceLen = Math.max(0.05, buf.duration - offset);
-                const availRealDur = availSourceLen / totalRate;
+                const availRealDur = availSourceLen / pitchRatio;
                 const loopCapDur = Math.max(0.28, 16 * stepDurSec);
                 const maxRealDur = Math.min(availRealDur, loopCapDur);
                 const shapedDur = Math.max(0.06, maxRealDur * (mix.length || 1.0));
@@ -2584,7 +2661,7 @@
                 src.connect(gain);
                 gain.connect(stepInputNode);
 
-                src.start(now, offset, Math.min(availSourceLen, shapedDur * totalRate + 0.04));
+                src.start(now, offset, Math.min(availSourceLen, shapedDur * pitchRatio + 0.04));
                 activeMap[voiceKey] = { src, gain, endTime: now + shapedDur };
                 return;
             }
@@ -3859,7 +3936,7 @@
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (!isRunning || isPauseMenuOpen) return;
+            if (!isRunning || isPauseMenuOpen || isStudioExpanded) return;
             if (isPointerLocked && !autoRouteActive) {
                 cameraYaw -= e.movementX * 0.0020;
                 cameraPitch -= e.movementY * 0.0020;
@@ -3916,6 +3993,7 @@
         });
 
         document.addEventListener('keydown', (e) => {
+            if (document.activeElement && document.activeElement.tagName === 'INPUT' && e.key !== 'Escape') return;
             const k = e.key.toLowerCase();
             if (e.key === 'Escape') {
                 if (isStudioExpanded) {
@@ -3925,18 +4003,25 @@
                 }
                 return;
             }
+            if (k === 'e' && interactionMode === 'ACTIVE') { toggleStudioMode(); return; }
+            if (k === 'p' || e.code === 'Space') {
+                e.preventDefault();
+                toggleAudioMute();
+                return;
+            }
+            if (isStudioExpanded) {
+                if (k === 'c') clearSequencerLoop();
+                if (k === 'q' && interactionMode === 'ACTIVE') toggleStepRecArm();
+                return;
+            }
+
             if (k === 'w' || e.key === 'ArrowUp') { moveKeys.w = true; if (autoRouteActive) toggleGuidedRoute(false); }
             if (k === 's' || e.key === 'ArrowDown') { moveKeys.s = true; if (autoRouteActive) toggleGuidedRoute(false); }
             if (k === 'a' || e.key === 'ArrowLeft') { moveKeys.a = true; if (autoRouteActive) toggleGuidedRoute(false); }
             if (k === 'd' || e.key === 'ArrowRight') { moveKeys.d = true; if (autoRouteActive) toggleGuidedRoute(false); }
 
             if (k === 'm') setInteractionMode(interactionMode === 'AUTONOMOUS' ? 'ACTIVE' : 'AUTONOMOUS');
-            if (k === 'e' && interactionMode === 'ACTIVE') toggleStudioMode();
             if (k === 'q' && interactionMode === 'ACTIVE') toggleStepRecArm();
-            if (k === 'p' || e.code === 'Space') {
-                e.preventDefault();
-                toggleAudioMute();
-            }
             if (k === 'r') toggleGuidedRoute();
             if (k === 'v') cycleVisualStyle();
             if (k === 'c') clearSequencerLoop();
@@ -3995,35 +4080,37 @@
             const elapsed = clock.getElapsedTime();
 
             if (isRunning) {
-                if (autoRouteActive) {
-                    updateAutoRoute(dt);
-                } else {
-                    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
-                    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
+                if (!isStudioExpanded) {
+                    if (autoRouteActive) {
+                        updateAutoRoute(dt);
+                    } else {
+                        const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
+                        const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw);
 
-                    const moveVec = new THREE.Vector3();
-                    if (moveKeys.w) moveVec.add(forward);
-                    if (moveKeys.s) moveVec.sub(forward);
-                    if (moveKeys.d) moveVec.add(right);
-                    if (moveKeys.a) moveVec.sub(right);
+                        const moveVec = new THREE.Vector3();
+                        if (moveKeys.w) moveVec.add(forward);
+                        if (moveKeys.s) moveVec.sub(forward);
+                        if (moveKeys.d) moveVec.add(right);
+                        if (moveKeys.a) moveVec.sub(right);
 
-                    isMoving = moveVec.lengthSq() > 0.001;
-                    if (isMoving) {
-                        moveVec.normalize().multiplyScalar(walkSpeed * dt);
-                        const candX = playerFootPos.x + moveVec.x;
-                        const candZ = playerFootPos.z + moveVec.z;
-                        if (!checkHorizontalCollision(candX, playerFootPos.z, playerFootPos.y)) playerFootPos.x = candX;
-                        if (!checkHorizontalCollision(playerFootPos.x, candZ, playerFootPos.y)) playerFootPos.z = candZ;
+                        isMoving = moveVec.lengthSq() > 0.001;
+                        if (isMoving) {
+                            moveVec.normalize().multiplyScalar(walkSpeed * dt);
+                            const candX = playerFootPos.x + moveVec.x;
+                            const candZ = playerFootPos.z + moveVec.z;
+                            if (!checkHorizontalCollision(candX, playerFootPos.z, playerFootPos.y)) playerFootPos.x = candX;
+                            if (!checkHorizontalCollision(playerFootPos.x, candZ, playerFootPos.y)) playerFootPos.z = candZ;
+                        }
+
+                        const targetElev = getArchitecturalFloorElevation(playerFootPos.x, playerFootPos.z, playerFootPos.y);
+                        playerFootPos.y += (targetElev - playerFootPos.y) * Math.min(1.0, dt * 10.0);
+
+                        const bob = isMoving ? Math.sin(elapsed * 7.5) * 0.028 : 0.0;
+                        camera.position.set(playerFootPos.x, playerFootPos.y + PLAYER_EYE_HEIGHT + bob, playerFootPos.z);
                     }
 
-                    const targetElev = getArchitecturalFloorElevation(playerFootPos.x, playerFootPos.z, playerFootPos.y);
-                    playerFootPos.y += (targetElev - playerFootPos.y) * Math.min(1.0, dt * 10.0);
-
-                    const bob = isMoving ? Math.sin(elapsed * 7.5) * 0.028 : 0.0;
-                    camera.position.set(playerFootPos.x, playerFootPos.y + PLAYER_EYE_HEIGHT + bob, playerFootPos.z);
+                    evaluateSpatialZoneAndGaze(dt);
                 }
-
-                evaluateSpatialZoneAndGaze(dt);
                 updateContinuousAudio(dt);
                 syncSequencerVisualClock();
                 updateDjVisualizer();
