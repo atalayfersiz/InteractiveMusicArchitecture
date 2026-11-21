@@ -315,7 +315,8 @@
             border: 1px solid var(--panel-border);
             backdrop-filter: blur(14px);
             pointer-events: auto;
-            min-width: 780px;
+            min-width: 860px;
+            max-width: calc(100vw - 32px);
         }
 
         /* Upper Row of Bottom Dock: 7-Layer Interactive 16-Step Sequencer (Visible only in User Activates mode) */
@@ -376,6 +377,9 @@
             background: rgba(255, 255, 255, 0.04);
             border-left-color: var(--layer-color, var(--accent));
         }
+        .seq-layer-row.layer-muted {
+            opacity: 0.48;
+        }
 
         .seq-layer-label {
             width: 74px;
@@ -398,6 +402,107 @@
             height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+
+        .seq-layer-mix {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-right: 4px;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+
+        .seq-layer-mute {
+            width: 16px;
+            height: 16px;
+            padding: 0;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            line-height: 14px;
+            text-align: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .seq-layer-mute:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        .seq-layer-mute.is-muted {
+            background: rgba(231, 76, 60, 0.25);
+            border-color: #e74c3c;
+            color: #ff8a80;
+        }
+
+        .knob-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            user-select: none;
+        }
+
+        .rotary-knob {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #2b3242, #11151d 78%);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            position: relative;
+            cursor: ns-resize;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        .rotary-knob.master-knob {
+            width: 20px;
+            height: 20px;
+        }
+        .rotary-knob:hover, .rotary-knob.dragging {
+            border-color: var(--knob-color, var(--accent));
+        }
+
+        .rotary-knob-dial {
+            position: absolute;
+            inset: 0;
+            transform: rotate(var(--knob-angle, 0deg));
+            pointer-events: none;
+        }
+        .rotary-knob-dial::after {
+            content: '';
+            display: block;
+            width: 2px;
+            height: 5px;
+            margin: 1px auto 0;
+            background: var(--knob-color, var(--accent));
+            border-radius: 1px;
+        }
+        .rotary-knob.master-knob .rotary-knob-dial::after {
+            height: 6px;
+        }
+
+        .knob-caption {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.5px;
+            color: rgba(255, 255, 255, 0.48);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .knob-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8.5px;
+            color: var(--text);
+            min-width: 26px;
+        }
+
+        .seq-master-knobs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 8px;
+            border-left: 1px solid rgba(255, 255, 255, 0.10);
+            border-right: 1px solid rgba(255, 255, 255, 0.10);
         }
 
         .seq-layer-steps {
@@ -622,6 +727,7 @@
                         <span id="seq-mode-label">16-STEP SEQUENCER</span>
                         <span class="seq-selected-badge" id="seq-selected-voice">VOICE: STAIR</span>
                     </div>
+                    <div class="seq-master-knobs" id="seq-master-knobs" onmousedown="event.stopPropagation()"></div>
                     <div class="seq-actions" onmousedown="event.stopPropagation()">
                         <select id="seq-export-loops" class="seq-mini-select" title="Number of 16-step loops to export">
                             <option value="1">1 Loop</option>
@@ -865,10 +971,158 @@
         let currentStep = 0;
         let sequencerSteps = Array.from({ length: 16 }, () => []);
 
-        // Build 7-layer x 16-step interactive sequencer cells in the DOM
+        const masterMix = { volume: 0.80, reverb: 0.42, delay: 0.25 };
+        const layerMix = {};
+        ACTIVE_VOICE_KEYS.forEach(vk => {
+            layerMix[vk] = { vol: 0.85, pan: 0.0, filter: 1.0, muted: false };
+        });
+
+        function formatFilterHz(norm) {
+            const hz = 250 * Math.pow(64, Math.max(0, Math.min(1, norm)));
+            return hz >= 1000 ? `${(hz / 1000).toFixed(1)}k` : `${Math.round(hz)}`;
+        }
+
+        function formatPan(pan) {
+            if (Math.abs(pan) < 0.04) return 'C';
+            const pct = Math.round(Math.abs(pan) * 100);
+            return pan < 0 ? `L${pct}` : `R${pct}`;
+        }
+
+        function createRotaryKnob({ label, min = 0, max = 1, defaultValue = 0.8, color = '#e5c378', isMaster = false, showValue = false, formatValue = null, onChange }) {
+            let value = defaultValue;
+            const wrap = document.createElement('div');
+            wrap.className = 'knob-wrap';
+            wrap.style.setProperty('--knob-color', color);
+
+            if (label) {
+                const cap = document.createElement('span');
+                cap.className = 'knob-caption';
+                cap.innerText = label;
+                wrap.appendChild(cap);
+            }
+
+            const knob = document.createElement('div');
+            knob.className = 'rotary-knob' + (isMaster ? ' master-knob' : '');
+            const dial = document.createElement('div');
+            dial.className = 'rotary-knob-dial';
+            knob.appendChild(dial);
+            wrap.appendChild(knob);
+
+            let valEl = null;
+            if (showValue) {
+                valEl = document.createElement('span');
+                valEl.className = 'knob-val';
+                wrap.appendChild(valEl);
+            }
+
+            const syncKnobUI = () => {
+                const norm = (value - min) / Math.max(1e-6, max - min);
+                const angle = -135 + norm * 270;
+                knob.style.setProperty('--knob-angle', `${angle.toFixed(1)}deg`);
+                const text = formatValue ? formatValue(value) : `${Math.round(norm * 100)}%`;
+                knob.title = `${label || 'Knob'}: ${text} (Drag vertically / Scroll · Double-click to reset)`;
+                if (valEl) valEl.innerText = text;
+            };
+
+            const setValue = (nextVal) => {
+                value = Math.max(min, Math.min(max, nextVal));
+                syncKnobUI();
+                if (onChange) onChange(value);
+            };
+
+            syncKnobUI();
+
+            knob.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const startY = e.clientY;
+                const startVal = value;
+                const span = max - min;
+                knob.classList.add('dragging');
+
+                const onMove = (mv) => {
+                    const dy = startY - mv.clientY;
+                    setValue(startVal + (dy / 90) * span);
+                };
+                const onUp = () => {
+                    knob.classList.remove('dragging');
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                };
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+            });
+
+            knob.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const step = (max - min) * 0.05;
+                setValue(value + (e.deltaY < 0 ? step : -step));
+            }, { passive: false });
+
+            knob.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                setValue(defaultValue);
+            });
+
+            return wrap;
+        }
+
+        // Mount Master Mixing Knobs in Sequencer Header (Master Vol, Reverb, Delay)
+        const masterKnobsEl = document.getElementById('seq-master-knobs');
+        if (masterKnobsEl) {
+            masterKnobsEl.appendChild(createRotaryKnob({
+                label: 'MST',
+                min: 0,
+                max: 1,
+                defaultValue: masterMix.volume,
+                color: '#e5c378',
+                isMaster: true,
+                showValue: true,
+                onChange: (v) => {
+                    masterMix.volume = v;
+                    if (!isMuted && masterGain && audioCtx) {
+                        masterGain.gain.setTargetAtTime(Math.max(0.00001, v), audioCtx.currentTime, 0.02);
+                    }
+                }
+            }));
+            masterKnobsEl.appendChild(createRotaryKnob({
+                label: 'REV',
+                min: 0,
+                max: 1,
+                defaultValue: masterMix.reverb,
+                color: '#72efdd',
+                isMaster: true,
+                showValue: true,
+                onChange: (v) => {
+                    masterMix.reverb = v;
+                    if (reverbSendGain && audioCtx) {
+                        reverbSendGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.02);
+                    }
+                }
+            }));
+            masterKnobsEl.appendChild(createRotaryKnob({
+                label: 'DLY',
+                min: 0,
+                max: 0.9,
+                defaultValue: masterMix.delay,
+                color: '#80ffdb',
+                isMaster: true,
+                showValue: true,
+                onChange: (v) => {
+                    masterMix.delay = v;
+                    if (delaySendGain && audioCtx) {
+                        delaySendGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.02);
+                    }
+                }
+            }));
+        }
+
+        // Build 7-layer x 16-step interactive sequencer cells + per-layer mixing knobs in the DOM
         const seqContainer = document.getElementById('sequencer-ui');
         ACTIVE_VOICE_KEYS.forEach((voiceKey, layerIdx) => {
             const cfg = VOICE_CONFIG[voiceKey] || VOICE_CONFIG.EXT_STAIR;
+            const mix = layerMix[voiceKey];
             const row = document.createElement('div');
             row.className = 'seq-layer-row' + (voiceKey === selectedSequencerVoice ? ' active-layer' : '');
             row.id = `seq-row-${voiceKey}`;
@@ -882,6 +1136,53 @@
                 e.stopPropagation();
                 selectVoicePad(voiceKey);
             });
+
+            const mixStrip = document.createElement('div');
+            mixStrip.className = 'seq-layer-mix';
+
+            const muteBtn = document.createElement('button');
+            muteBtn.className = 'seq-layer-mute';
+            muteBtn.innerText = 'M';
+            muteBtn.title = `Mute / Unmute ${cfg.shortName}`;
+            muteBtn.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                mix.muted = !mix.muted;
+                muteBtn.classList.toggle('is-muted', mix.muted);
+                row.classList.toggle('layer-muted', mix.muted);
+            });
+
+            const volKnob = createRotaryKnob({
+                label: 'V',
+                min: 0,
+                max: 1.2,
+                defaultValue: mix.vol,
+                color: cfg.colorCss,
+                formatValue: (v) => `${Math.round(v * 100)}%`,
+                onChange: (v) => { mix.vol = v; }
+            });
+            const panKnob = createRotaryKnob({
+                label: 'P',
+                min: -1,
+                max: 1,
+                defaultValue: mix.pan,
+                color: cfg.colorCss,
+                formatValue: formatPan,
+                onChange: (v) => { mix.pan = v; }
+            });
+            const fltKnob = createRotaryKnob({
+                label: 'F',
+                min: 0,
+                max: 1,
+                defaultValue: mix.filter,
+                color: cfg.colorCss,
+                formatValue: (v) => `${formatFilterHz(v)}Hz`,
+                onChange: (v) => { mix.filter = v; }
+            });
+
+            mixStrip.appendChild(muteBtn);
+            mixStrip.appendChild(volKnob);
+            mixStrip.appendChild(panKnob);
+            mixStrip.appendChild(fltKnob);
 
             const stepsWrap = document.createElement('div');
             stepsWrap.className = 'seq-layer-steps';
@@ -911,6 +1212,7 @@
             });
 
             row.appendChild(label);
+            row.appendChild(mixStrip);
             row.appendChild(stepsWrap);
             row.appendChild(clearBtn);
             seqContainer.appendChild(row);
@@ -935,8 +1237,8 @@
             initAudioEngine();
             updateActiveVoiceUI(voiceKey);
 
-            // Audition the sound immediately when clicking the voice pad or layer label!
-            triggerVoiceStep(voiceKey, currentStep, 0.90);
+            // Audition the sound immediately when clicking the voice pad or layer label (bypasses layer mute)!
+            triggerVoiceStep(voiceKey, currentStep, 0.90, false);
         }
 
         function toggleStepInSequencer(stepIdx, voiceKey = selectedSequencerVoice) {
@@ -997,7 +1299,7 @@
                 btn.innerText = "Audio: ON [P]";
                 btn.classList.remove('muted-state');
                 if (masterGain && audioCtx) {
-                    masterGain.gain.setTargetAtTime(0.80, audioCtx.currentTime, 0.06);
+                    masterGain.gain.setTargetAtTime(Math.max(0.00001, masterMix.volume), audioCtx.currentTime, 0.06);
                 }
             }
         }
@@ -1007,7 +1309,7 @@
             document.getElementById('walk-speed-label').innerText = `${walkSpeed.toFixed(1)}m/s`;
         }
 
-        function buildMasterAudioGraph(ctx, masterVol = 0.80) {
+        function buildMasterAudioGraph(ctx, masterVol = masterMix.volume, revAmt = masterMix.reverb, dlyAmt = masterMix.delay) {
             const now = ctx.currentTime;
             const comp = ctx.createDynamicsCompressor();
             comp.threshold.setValueAtTime(-16, now);
@@ -1031,7 +1333,7 @@
             }
             rev.buffer = impulse;
             const revSend = ctx.createGain();
-            revSend.gain.value = 0.42;
+            revSend.gain.value = revAmt;
 
             const dly = ctx.createDelay(1.0);
             dly.delayTime.value = 0.375;
@@ -1041,7 +1343,7 @@
             dlyFilter.type = 'lowpass';
             dlyFilter.frequency.value = 1800;
             const dlySend = ctx.createGain();
-            dlySend.gain.value = 0.25;
+            dlySend.gain.value = dlyAmt;
 
             dly.connect(dlyFilter);
             dlyFilter.connect(dlyFeedback);
@@ -1071,7 +1373,12 @@
             }
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-            const graph = buildMasterAudioGraph(audioCtx, isMuted ? 0.00001 : 0.80);
+            const graph = buildMasterAudioGraph(
+                audioCtx,
+                isMuted ? 0.00001 : masterMix.volume,
+                masterMix.reverb,
+                masterMix.delay
+            );
             compressor = graph.compressor;
             masterGain = graph.masterGain;
             reverbNode = graph.reverbNode;
@@ -1276,7 +1583,7 @@
             }
         }
 
-        function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8) {
+        function triggerVoiceStep(voiceKey, stepIndex, intensity = 0.8, respectMix = true) {
             if (!audioCtx || isMuted || intensity <= 0.02) return;
             scheduleVoiceStep(
                 audioCtx,
@@ -1284,16 +1591,44 @@
                 voiceKey,
                 stepIndex,
                 audioCtx.currentTime,
-                intensity
+                intensity,
+                respectMix
             );
         }
 
-        function scheduleVoiceStep(ctx, targets, voiceKey, stepIndex, when, intensity = 0.8) {
+        function scheduleVoiceStep(ctx, targets, voiceKey, stepIndex, when, intensity = 0.8, respectMix = true) {
             if (!ctx || intensity <= 0.02) return;
+            const mix = layerMix[voiceKey];
+            if (respectMix && mix && mix.muted) return;
+
+            const effIntensity = intensity * (mix ? mix.vol : 1.0);
+            if (effIntensity <= 0.01) return;
+
             const now = when;
             const targetMaster = targets.master;
             const targetReverb = targets.reverb;
             const targetDelay = targets.delay;
+
+            const stepFilter = ctx.createBiquadFilter();
+            stepFilter.type = 'lowpass';
+            stepFilter.frequency.setValueAtTime(250 * Math.pow(64, mix ? mix.filter : 1.0), now);
+            stepFilter.Q.setValueAtTime(0.85, now);
+
+            const stepOut = (typeof ctx.createStereoPanner === 'function')
+                ? ctx.createStereoPanner()
+                : ctx.createGain();
+            if (stepOut.pan) {
+                stepOut.pan.setValueAtTime(Math.max(-1, Math.min(1, mix ? mix.pan : 0)), now);
+            }
+            stepFilter.connect(stepOut);
+            stepOut.connect(targetMaster);
+
+            const sendRev = abletonVoiceBuffers[voiceKey] || voiceKey !== 'EXT_STAIR';
+            const sendDly = abletonVoiceBuffers[voiceKey]
+                ? (voiceKey === 'EXT_COLUMNS' || voiceKey === 'FOYER_FRAMES')
+                : !['EXT_STAIR', 'FOYER_VOID'].includes(voiceKey);
+            if (targetReverb && sendRev) stepOut.connect(targetReverb);
+            if (targetDelay && sendDly) stepOut.connect(targetDelay);
 
             // 1. Primary LMMS/Stem Audio Playback
             if (abletonVoiceBuffers[voiceKey]) {
@@ -1306,16 +1641,12 @@
                 const playLen = Math.min(buf.duration - offset, Math.max(0.35, stepDur * 2.2));
 
                 const gain = ctx.createGain();
-                const peak = Math.min(1.0, intensity * 0.88);
+                const peak = Math.min(1.0, effIntensity * 0.88);
                 gain.gain.setValueAtTime(peak, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + playLen);
 
                 src.connect(gain);
-                gain.connect(targetMaster);
-                if (targetReverb) gain.connect(targetReverb);
-                if (targetDelay && (voiceKey === 'EXT_COLUMNS' || voiceKey === 'FOYER_FRAMES')) {
-                    gain.connect(targetDelay);
-                }
+                gain.connect(stepFilter);
 
                 src.start(now, offset, playLen);
                 return;
@@ -1331,13 +1662,13 @@
                     kickOsc.frequency.setValueAtTime(118.0, now);
                     kickOsc.frequency.exponentialRampToValueAtTime(42.0, now + 0.11);
 
-                    const kPeak = Math.min(0.40, intensity * 0.36);
+                    const kPeak = Math.min(0.40, effIntensity * 0.36);
                     kickEnv.gain.setValueAtTime(0.001, now);
                     kickEnv.gain.linearRampToValueAtTime(kPeak, now + 0.006);
                     kickEnv.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
 
                     kickOsc.connect(kickEnv);
-                    kickEnv.connect(targetMaster);
+                    kickEnv.connect(stepFilter);
                     kickOsc.start(now);
                     kickOsc.stop(now + 0.25);
                 } else if (stepIndex % 2 === 0) {
@@ -1350,17 +1681,17 @@
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(freq, now);
                     filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(180 + intensity * 320, now);
+                    filter.frequency.setValueAtTime(180 + effIntensity * 320, now);
                     filter.frequency.exponentialRampToValueAtTime(95, now + 0.20);
 
-                    const peak = Math.min(0.28, intensity * 0.24);
+                    const peak = Math.min(0.28, effIntensity * 0.24);
                     env.gain.setValueAtTime(0.001, now);
                     env.gain.linearRampToValueAtTime(peak, now + 0.015);
                     env.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
                     osc.connect(filter);
                     filter.connect(env);
-                    env.connect(targetMaster);
+                    env.connect(stepFilter);
                     osc.start(now);
                     osc.stop(now + 0.23);
                 }
@@ -1377,19 +1708,17 @@
                 osc.frequency.setValueAtTime(freq, now);
 
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(450 + intensity * 1200, now);
+                filter.frequency.setValueAtTime(450 + effIntensity * 1200, now);
                 filter.frequency.exponentialRampToValueAtTime(280, now + 0.20);
 
-                const peak = Math.min(0.30, intensity * 0.26);
+                const peak = Math.min(0.30, effIntensity * 0.26);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.012);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.24);
 
                 osc.connect(filter);
                 filter.connect(env);
-                env.connect(targetMaster);
-                if (targetDelay) env.connect(targetDelay);
-                if (targetReverb) env.connect(targetReverb);
+                env.connect(stepFilter);
 
                 osc.start(now);
                 osc.stop(now + 0.25);
@@ -1403,15 +1732,13 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
-                const peak = Math.min(0.20, intensity * 0.18);
+                const peak = Math.min(0.20, effIntensity * 0.18);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.04);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.65);
 
                 osc.connect(env);
-                env.connect(targetMaster);
-                if (targetReverb) env.connect(targetReverb);
-                if (targetDelay) env.connect(targetDelay);
+                env.connect(stepFilter);
 
                 osc.start(now);
                 osc.stop(now + 0.66);
@@ -1422,14 +1749,13 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(65.41, now);
 
-                const peak = Math.min(0.30, intensity * 0.26);
+                const peak = Math.min(0.30, effIntensity * 0.26);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.12);
                 env.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
 
                 osc.connect(env);
-                env.connect(targetMaster);
-                if (targetReverb) env.connect(targetReverb);
+                env.connect(stepFilter);
                 osc.start(now);
                 osc.stop(now + 0.96);
             }
@@ -1448,10 +1774,10 @@
                 osc2.frequency.setValueAtTime(freq * 1.003, now);
 
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(380 + intensity * 1350, now);
+                filter.frequency.setValueAtTime(380 + effIntensity * 1350, now);
                 filter.frequency.exponentialRampToValueAtTime(220, now + 0.18);
 
-                const peak = Math.min(0.26, intensity * 0.22);
+                const peak = Math.min(0.26, effIntensity * 0.22);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.010);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.20);
@@ -1459,9 +1785,7 @@
                 osc1.connect(filter);
                 osc2.connect(filter);
                 filter.connect(env);
-                env.connect(targetMaster);
-                if (targetDelay) env.connect(targetDelay);
-                if (targetReverb) env.connect(targetReverb);
+                env.connect(stepFilter);
 
                 osc1.start(now);
                 osc2.start(now);
@@ -1483,19 +1807,17 @@
                 osc.frequency.setValueAtTime(freq, now);
 
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(420 + intensity * 1100, now);
+                filter.frequency.setValueAtTime(420 + effIntensity * 1100, now);
                 filter.frequency.exponentialRampToValueAtTime(240, now + 0.26);
 
-                const peak = Math.min(0.30, intensity * 0.26);
+                const peak = Math.min(0.30, effIntensity * 0.26);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.015);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.28);
 
                 osc.connect(filter);
                 filter.connect(env);
-                env.connect(targetMaster);
-                if (targetDelay) env.connect(targetDelay);
-                if (targetReverb) env.connect(targetReverb);
+                env.connect(stepFilter);
 
                 osc.start(now);
                 osc.stop(now + 0.29);
@@ -1509,15 +1831,13 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq, now);
 
-                const peak = Math.min(0.18, intensity * 0.16);
+                const peak = Math.min(0.18, effIntensity * 0.16);
                 env.gain.setValueAtTime(0.001, now);
                 env.gain.linearRampToValueAtTime(peak, now + 0.03);
                 env.gain.exponentialRampToValueAtTime(0.0008, now + 0.55);
 
                 osc.connect(env);
-                env.connect(targetMaster);
-                if (targetReverb) env.connect(targetReverb);
-                if (targetDelay) env.connect(targetDelay);
+                env.connect(stepFilter);
 
                 osc.start(now);
                 osc.stop(now + 0.56);
@@ -1610,7 +1930,7 @@
 
                 const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
                 const offlineCtx = new OfflineCtx(2, totalFrames, sampleRate);
-                const graph = buildMasterAudioGraph(offlineCtx, 0.82);
+                const graph = buildMasterAudioGraph(offlineCtx, masterMix.volume, masterMix.reverb, masterMix.delay);
                 const targets = {
                     master: graph.masterGain,
                     reverb: graph.reverbSendGain,
@@ -1666,7 +1986,8 @@
                     const events = sequencerSteps[currentStep];
                     if (events && events.length > 0) {
                         events.forEach(ev => {
-                            triggerVoiceStep(ev.voice, currentStep, 0.85);
+                            if (layerMix[ev.voice]?.muted) return;
+                            triggerVoiceStep(ev.voice, currentStep, 0.85, true);
                             if (ev.point) spawnRipple(ev.point, VOICE_CONFIG[ev.voice]?.colorHex || 0xe5c378);
                         });
                     }
