@@ -144,60 +144,109 @@
             transition: opacity 0.5s ease;
         }
 
-        /* Top-Left: Sharp Architectural Command Bar */
-        .top-bar {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            display: flex;
-            align-items: stretch;
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            backdrop-filter: blur(12px);
+        /* Options & Pause Menu Overlay (Opened with [ESC] — blurs scene & muffles audio) */
+        #pause-menu {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 7, 11, 0.68);
+            backdrop-filter: blur(14px);
+            z-index: 30;
+            display: none;
+            align-items: center;
+            justify-content: center;
             pointer-events: auto;
         }
-
+        #pause-menu.visible {
+            display: flex;
+        }
+        .pause-box {
+            width: min(460px, 90vw);
+            background: rgba(11, 14, 21, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.20);
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.85);
+            padding: 26px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .pause-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+            padding-bottom: 10px;
+        }
+        .pause-title {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+        .pause-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+        .pause-section {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .pause-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1.2px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+        .pause-row {
+            display: flex;
+            gap: 8px;
+        }
         .hud-btn {
-            background: transparent;
-            border: none;
-            border-right: 1px solid rgba(255, 255, 255, 0.10);
+            flex: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             color: var(--muted);
             font-family: 'JetBrains Mono', monospace;
-            font-size: 10.5px;
+            font-size: 10px;
             letter-spacing: 0.8px;
-            padding: 9px 13px;
+            padding: 9px 12px;
             cursor: pointer;
             transition: all 0.15s ease;
             text-transform: uppercase;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-        }
-        .hud-btn:last-child {
-            border-right: none;
         }
         .hud-btn:hover {
             color: #fff;
-            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.40);
+            background: rgba(255, 255, 255, 0.08);
         }
         .hud-btn.active {
-            background: rgba(255, 255, 255, 0.14);
+            background: rgba(229, 195, 120, 0.16);
             color: #fff;
-            border-bottom: 2px solid var(--accent);
+            border-color: var(--accent);
         }
         .hud-btn.muted-state {
             background: rgba(255, 92, 92, 0.18);
             color: var(--danger);
-            border-bottom: 2px solid var(--danger);
+            border-color: var(--danger);
         }
 
-        /* Walk Speed Slider Control inside Top Bar */
         .speed-control {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 0 13px;
-            border-right: 1px solid rgba(255, 255, 255, 0.10);
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             color: var(--muted);
@@ -206,7 +255,7 @@
         .speed-slider {
             -webkit-appearance: none;
             appearance: none;
-            width: 72px;
+            flex: 1;
             height: 3px;
             background: rgba(255, 255, 255, 0.18);
             outline: none;
@@ -215,16 +264,33 @@
         .speed-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 8px;
-            height: 14px;
+            width: 9px;
+            height: 15px;
             background: var(--accent);
             cursor: pointer;
             border: none;
         }
         .speed-val {
             color: #fff;
-            min-width: 34px;
+            min-width: 78px;
             text-align: right;
+        }
+        .pause-resume-btn {
+            margin-top: 4px;
+            background: var(--accent);
+            color: #08090c;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 11px 16px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .pause-resume-btn:hover {
+            background: #fff;
         }
 
         /* Top-Right: Sharp Zone Readout */
@@ -929,18 +995,53 @@
 
     <!-- Sharp Rectilinear HUD -->
     <div id="hud">
-        <!-- Top-Left Command Bar -->
-        <div class="top-bar">
-            <button class="hud-btn active" id="btn-mode-auto" onclick="setInteractionMode('AUTONOMOUS')" title="Mode 2: Building Speaks by Gaze & Location [M]">Building Speaks</button>
-            <button class="hud-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Architecture or Sequencer Steps to Play & Loop [M]">User Activates</button>
-            <button class="hud-btn" id="btn-mute" onclick="toggleAudioMute()" title="Mute / Stop All Audio [Space or P]">Audio: ON [P]</button>
-            <div class="speed-control" title="Walk Speed & Sequencer BPM are linked (2.4m/s = 116 BPM)">
-                <span>Speed / BPM</span>
-                <input type="range" id="walk-speed-slider" class="speed-slider" min="0.8" max="6.0" step="0.2" value="2.4" oninput="updateWalkSpeed(this.value)">
-                <span class="speed-val" id="walk-speed-label">2.4m/s · 116</span>
+        <!-- Escape Pause & Options Menu (Blurred Backdrop + Muffled Audio) -->
+        <div id="pause-menu" onmousedown="if(event.target === this) setPauseMenuOpen(false, true);">
+            <div class="pause-box" onmousedown="event.stopPropagation()">
+                <div class="pause-header">
+                    <span class="pause-title">Options</span>
+                    <span class="pause-sub">Low-Pass Active · [ESC] Resume</span>
+                </div>
+
+                <div class="pause-section">
+                    <span class="pause-label">Interaction Mode [M]</span>
+                    <div class="pause-row">
+                        <button class="hud-btn active" id="btn-mode-auto" onclick="setInteractionMode('AUTONOMOUS')" title="Mode 2: Building Speaks by Gaze & Location [M]">Building Speaks</button>
+                        <button class="hud-btn" id="btn-mode-act" onclick="setInteractionMode('ACTIVE')" title="Mode 1: Click Architecture or Sequencer Steps to Play & Loop [M]">User Activates</button>
+                    </div>
+                </div>
+
+                <div class="pause-section">
+                    <span class="pause-label">Audio &amp; Main Volume</span>
+                    <div class="speed-control">
+                        <span>Main Vol</span>
+                        <input type="range" id="pause-master-vol-slider" class="speed-slider" min="0" max="100" step="1" value="80" oninput="setMasterVolume(this.value / 100)">
+                        <span class="speed-val" id="pause-master-vol-label">80%</span>
+                    </div>
+                    <div class="pause-row">
+                        <button class="hud-btn" id="btn-mute" onclick="toggleAudioMute()" title="Mute / Unmute All Audio [Space or P]">Audio: ON [P]</button>
+                    </div>
+                </div>
+
+                <div class="pause-section">
+                    <span class="pause-label">Walk Speed &amp; Sequencer Tempo</span>
+                    <div class="speed-control" title="Walk Speed & Sequencer BPM are linked (2.4m/s = 116 BPM)">
+                        <span>Speed / BPM</span>
+                        <input type="range" id="walk-speed-slider" class="speed-slider" min="0.8" max="6.0" step="0.2" value="2.4" oninput="updateWalkSpeed(this.value)">
+                        <span class="speed-val" id="walk-speed-label">2.4m/s · 116</span>
+                    </div>
+                </div>
+
+                <div class="pause-section">
+                    <span class="pause-label">Navigation &amp; Display</span>
+                    <div class="pause-row">
+                        <button class="hud-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Spatial Path [R]">Route [R]</button>
+                        <button class="hud-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: LiDAR [V]</button>
+                    </div>
+                </div>
+
+                <button class="pause-resume-btn" onclick="setPauseMenuOpen(false, true)">Resume Experience [ESC]</button>
             </div>
-            <button class="hud-btn" id="btn-route" onclick="toggleGuidedRoute()" title="Guided Spatial Path [R]">Route [R]</button>
-            <button class="hud-btn" id="btn-view" onclick="cycleVisualStyle()" title="Switch Visual Mode [V]">View: LiDAR [V]</button>
         </div>
 
         <!-- Top-Right Zone Readout -->
@@ -1180,6 +1281,7 @@
         let walkSpeed = 2.4; // Unified with BPM: 2.4 m/s === 116 BPM
         let selectedSequencerVoice = 'EXT_STAIR';
         let isStudioExpanded = false;
+        let isPauseMenuOpen = false;
         let isStepRecArmed = true;
         let isMetronomeOn = false;
 
@@ -1206,6 +1308,9 @@
         let audioCtx = null;
         let masterGain = null;
         let djFilterNode = null;
+        let pauseFilterNode = null;
+        let pauseGainNode = null;
+        let masterVolKnobCtrl = null;
         let analyserNode = null;
         let compressor = null;
         let reverbNode = null;
@@ -1398,7 +1503,7 @@
         // Mount Master Mixing Knobs in Sequencer Header (Studio Mode: Master Vol, 1-Knob HP/LP, Reverb, Delay)
         const masterKnobsEl = document.getElementById('seq-master-knobs');
         if (masterKnobsEl) {
-            masterKnobsEl.appendChild(createRotaryKnob({
+            masterVolKnobCtrl = createRotaryKnob({
                 label: 'MST',
                 min: 0,
                 max: 1,
@@ -1407,12 +1512,10 @@
                 isMaster: true,
                 showValue: true,
                 onChange: (v) => {
-                    masterMix.volume = v;
-                    if (!isMuted && masterGain && audioCtx) {
-                        masterGain.gain.setTargetAtTime(Math.max(0, v), audioCtx.currentTime, 0.02);
-                    }
+                    setMasterVolume(v, false);
                 }
-            }));
+            });
+            masterKnobsEl.appendChild(masterVolKnobCtrl);
             masterKnobsEl.appendChild(createRotaryKnob({
                 label: 'HP/LP',
                 min: -1,
@@ -2032,11 +2135,24 @@
             rev.connect(mGain);
 
             mGain.connect(djFiltNode);
-            djFiltNode.connect(comp);
 
+            let pFilter = null;
+            let pGain = null;
             let analyser = null;
             let mDest = null;
             if (withLiveOutputs && typeof ctx.createAnalyser === 'function') {
+                pFilter = ctx.createBiquadFilter();
+                pFilter.type = 'lowpass';
+                pFilter.frequency.setValueAtTime(isPauseMenuOpen ? 420 : 20000, now);
+                pFilter.Q.setValueAtTime(0.8, now);
+
+                pGain = ctx.createGain();
+                pGain.gain.setValueAtTime(isPauseMenuOpen ? 0.28 : 1.0, now);
+
+                djFiltNode.connect(pFilter);
+                pFilter.connect(pGain);
+                pGain.connect(comp);
+
                 analyser = ctx.createAnalyser();
                 analyser.fftSize = 256;
                 analyser.smoothingTimeConstant = 0.55;
@@ -2047,6 +2163,7 @@
                     comp.connect(mDest);
                 }
             } else {
+                djFiltNode.connect(comp);
                 comp.connect(ctx.destination);
             }
 
@@ -2054,6 +2171,8 @@
                 compressor: comp,
                 masterGain: mGain,
                 djFilterNode: djFiltNode,
+                pauseFilterNode: pFilter,
+                pauseGainNode: pGain,
                 analyserNode: analyser,
                 mediaStreamDest: mDest,
                 reverbNode: rev,
@@ -2061,6 +2180,43 @@
                 delayNode: dly,
                 delaySendGain: dlySend
             };
+        }
+
+        function setMasterVolume(normVal, syncKnob = true) {
+            const v = Math.max(0, Math.min(1, parseFloat(normVal) || 0));
+            masterMix.volume = v;
+            if (!isMuted && masterGain && audioCtx) {
+                masterGain.gain.setTargetAtTime(Math.max(0, v), audioCtx.currentTime, 0.02);
+            }
+            const sliderEl = document.getElementById('pause-master-vol-slider');
+            const lblEl = document.getElementById('pause-master-vol-label');
+            if (sliderEl) sliderEl.value = String(Math.round(v * 100));
+            if (lblEl) lblEl.innerText = `${Math.round(v * 100)}%`;
+            if (syncKnob && masterVolKnobCtrl && masterVolKnobCtrl.setKnobValue) {
+                masterVolKnobCtrl.setKnobValue(v, false);
+            }
+        }
+
+        function setPauseMenuOpen(open, relockPointer = false) {
+            isPauseMenuOpen = !!open;
+            const menuEl = document.getElementById('pause-menu');
+            if (menuEl) menuEl.classList.toggle('visible', isPauseMenuOpen);
+
+            if (audioCtx) {
+                const now = audioCtx.currentTime;
+                if (pauseGainNode) {
+                    pauseGainNode.gain.setTargetAtTime(isPauseMenuOpen ? 0.28 : 1.0, now, 0.12);
+                }
+                if (pauseFilterNode) {
+                    pauseFilterNode.frequency.setTargetAtTime(isPauseMenuOpen ? 420 : 20000, now, 0.12);
+                }
+            }
+
+            if (isPauseMenuOpen) {
+                if (isPointerLocked && document.exitPointerLock) document.exitPointerLock();
+            } else if (relockPointer && !autoRouteActive && !isStudioExpanded && isRunning) {
+                container.requestPointerLock();
+            }
         }
 
         function initAudioEngine() {
@@ -2081,6 +2237,8 @@
             compressor = graph.compressor;
             masterGain = graph.masterGain;
             djFilterNode = graph.djFilterNode;
+            pauseFilterNode = graph.pauseFilterNode;
+            pauseGainNode = graph.pauseGainNode;
             analyserNode = graph.analyserNode;
             mediaStreamDest = graph.mediaStreamDest;
             reverbNode = graph.reverbNode;
@@ -3691,11 +3849,17 @@
 
         document.addEventListener('pointerlockchange', () => {
             isPointerLocked = (document.pointerLockElement === container);
-            if (isPointerLocked) mouseNDC.set(0, 0);
+            if (isPointerLocked) {
+                mouseNDC.set(0, 0);
+                if (isPauseMenuOpen) setPauseMenuOpen(false, false);
+            } else if (isRunning && !isStudioExpanded && !isPauseMenuOpen && !autoRouteActive) {
+                // Pressing ESC to exit pointer lock automatically opens blurred & muffled options menu
+                setPauseMenuOpen(true);
+            }
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (!isRunning) return;
+            if (!isRunning || isPauseMenuOpen) return;
             if (isPointerLocked && !autoRouteActive) {
                 cameraYaw -= e.movementX * 0.0020;
                 cameraPitch -= e.movementY * 0.0020;
@@ -3711,7 +3875,7 @@
         // Clicking in the 3D scene triggers the gazed element's voice, spawns a 3D ripple,
         // selects that voice channel silently, and smart-quantizes recording into User Activates mode!
         container.addEventListener('mousedown', (e) => {
-            if (!isRunning || e.button !== 0 || isStudioExpanded) return;
+            if (!isRunning || e.button !== 0 || isStudioExpanded || isPauseMenuOpen) return;
             initAudioEngine();
             if (!isPointerLocked && !autoRouteActive) {
                 container.requestPointerLock();
@@ -3753,8 +3917,12 @@
 
         document.addEventListener('keydown', (e) => {
             const k = e.key.toLowerCase();
-            if (e.key === 'Escape' && isStudioExpanded) {
-                toggleStudioMode(false);
+            if (e.key === 'Escape') {
+                if (isStudioExpanded) {
+                    toggleStudioMode(false);
+                } else if (isRunning) {
+                    setPauseMenuOpen(!isPauseMenuOpen, isPauseMenuOpen);
+                }
                 return;
             }
             if (k === 'w' || e.key === 'ArrowUp') { moveKeys.w = true; if (autoRouteActive) toggleGuidedRoute(false); }
